@@ -21,6 +21,9 @@ BASIC認証設定を含むサーバ設定を（ある程度決め打ちで）自
     * [nginx](https://www.nginx.com/)
     * datavol（ホームページ本体） ；ホームページ群（HTMLファイル）を抱えておき、nginxに見せる用。 \
       （nginxコンテナには設定を入れたくなかった）
+      * `/nginx_html/` ディレクトリ：ホームページ群。
+      * `/nginx_setup/` ディレクトリ：下記変換コンテナアプリ → nginx コンテナアプリへ設定を渡す用。
+    * データ収集→変換コンテナアプリ（自作）
     * （余力があれば）DBアクセスUIアプリ
     * （余力があれば）DBアクセスAPIアプリ
 * HTTPファイルのディレクトリ設計（相対パスをnginxのlocationとして表現する）
@@ -38,6 +41,34 @@ Webサーバは nginx をコンテナで採用する。 Apache や Tomcat をホ
 
 Docker のインストールは、公式サイト https://docs.docker.com/engine/install/ を参照して実施する。
 
+### datavol コンテナの設定
+
+* datavol コンテナは DockerオフィシャルサイトのDebianイメージ https://hub.docker.com/_/debian から作成する。
+
+  ```bash
+  echo "FROM debian" > Dockerfile
+  echo "RUN mkdir /datavol" >> Dockerfile
+  echo "VOLUME datavol" >> Dockerfile 
+  echo 'CMD ["/bin/true"]' >> Dockerfile
+  docker build -t datavol .
+  docker run --name datavol datavol
+  ```
+
+* datavol コンテナの作成完了は、以下の通り確認する。
+
+  ```bash
+  $ docker ps -a
+  CONTAINER ID   IMAGE                COMMAND                  CREATED          STATUS                      PORTS                                       NAMES
+  1925c68352eb   datavol              "/bin/true"              59 seconds ago   Exited (0) 47 seconds ago                                               datavol
+  ```
+
+* datavol コンテナの作成に失敗した場合、以下の通りコンテナの削除（切り戻し）が可能
+
+  ```bash
+  $ docker rm datavol
+  datavol
+  ```
+
 ### PostgreSQL コンテナの設定
 
 * PostgreSQL サーバ は Dockerオフィシャルサイトイメージ https://hub.docker.com/_/postgres から取得してくる。
@@ -49,7 +80,7 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
 * サーバを実行する。
 
   ```bash
-  docker run -d --restart=always --name some-postgres -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres
+  docker run -d --restart=always --volumes-from datavol --name dbserver -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres
   ```
 
   上記、 `POSTGRES_PASSWORD=mysecretpassword` は適宜変更すること。本書ではこのままの設定として話を進める。
@@ -57,9 +88,19 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
   起動確認は以下のとおり。
 
   ```bash
-  $ docker ps
+  $ docker ps -a
   CONTAINER ID   IMAGE                COMMAND                  CREATED          STATUS          PORTS                                       NAMES
-  87f9ed774677   postgres             "docker-entrypoint.s…"   18 hours ago     Up 18 hours     0.0.0.0:5432->5432/tcp, :::5432->5432/tcp   some-postgres
+  CONTAINER ID   IMAGE                COMMAND                  CREATED          STATUS                     PORTS                                       NAMES
+  2d7a489c7ded   postgres             "docker-entrypoint.s…"   24 seconds ago   Up 14 seconds              0.0.0.0:5432->5432/tcp, :::5432->5432/tcp   dbserver
+  1925c68352eb   datavol              "/bin/true"              4 minutes ago    Exited (0) 4 minutes ago                                               datavol
+  ```
+
+* PostgreSQL コンテナの作成に失敗した場合、以下の通りコンテナの削除（切り戻し）が可能
+
+  ```bash
+  $ docker stop dbserver && docker rm $_
+  dbserver
+  dbserver
   ```
 
 * （必要があれば）サーバの動作確認を行う。
@@ -212,9 +253,7 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
     ```
 
   * locationリスト \
-    * location `/` の設定。 \
-      auth_basic off;
-      auth_basic_user_file ""; （あるいは設定なし）
+    * location `/` は設定しないこと（）。
     * location `/webadmin/` の設定。\
       auth_basic "web access admin"; \
       auth_basic_user_file "conf/webadmin_passwd";
@@ -224,9 +263,8 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
 
     ```bash
     $ psql -d settings_nginx -U postgres -h 172.17.0.1 <<EOF
-    INSERT INTO location (location, type, file) VALUES ('/', 'off', '');
-    INSERT INTO location (location, type, file) VALUES ('/webadmin/', 'web admin', 'conf/webadmin_passwd');
-    INSERT INTO location (location, type, file) VALUES ('/sysadmin/', 'system admin', 'conf/sysadmin_passwd');
+    INSERT INTO location (location, type, file) VALUES ('webadmin', 'web admin', 'conf/webadmin_passwd');
+    INSERT INTO location (location, type, file) VALUES ('sysadmin', 'system admin', 'conf/sysadmin_passwd');
     EOF
     ```
 
@@ -237,12 +275,11 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
     SELECT * FROM location;
     EOF
     Password for user postgres: 
-      location  |     type     |         file         
-    ------------+--------------+----------------------
-     /          | off          | 
-     /webadmin/ | web admin    | conf/webadmin_passwd
-     /sysadmin/ | system admin | conf/sysadmin_passwd
-    (3 rows)
+     location |     type     |         file         
+    ----------+--------------+----------------------
+     webadmin | web admin    | conf/webadmin_passwd
+     sysadmin | system admin | conf/sysadmin_passwd
+    (2 rows)
     ```
 
     データの削除（登録失敗時のリカバリ）は以下の通り。
@@ -291,7 +328,6 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
     EOF
     ```
 
-### datavol コンテナの設定
 
 ### Nginx コンテナの設定
 
@@ -301,7 +337,7 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
   ```bash
   echo "FROM nginx" > Dockerfile
   docker build -t some-content-nginx .
-  docker run --name some-nginx -d -p 80:80 some-content-nginx
+  docker run --volumes-from datavol --name webserver -d -p 80:80 some-content-nginx
   ```
 
   コンテナ起動確認は以下のとおり。
@@ -340,6 +376,14 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
   <p><em>Thank you for using nginx.</em></p>
   </body>
   </html>
+  ```
+
+* nginx コンテナの作成に失敗した場合、あるいは作り直す場合、以下の通りコンテナの削除（切り戻し）が可能
+
+  ```bash
+  $ docker stop webserver && docker rm $_
+  webserver
+  webserver
   ```
 
 * 設定ファイルの調査・確認
