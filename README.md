@@ -19,14 +19,15 @@ BASIC認証設定を含むサーバ設定を（ある程度決め打ちで）自
   * アプリ ： [Docker](https://www.docker.com/ja-jp/)をベースにする。コンテナは以下。
     * [PostgreSQL](https://www.postgresql.org/)
     * [nginx](https://www.nginx.com/)
-    * datavol（ホームページ本体） ；ホストのホームページ群（HTMLファイル）をnginxに見せる用。 \
+    * datavol（ホームページ本体） ；ホームページ群（HTMLファイル）を抱えておき、nginxに見せる用。 \
       （nginxコンテナには設定を入れたくなかった）
     * （余力があれば）DBアクセスUIアプリ
     * （余力があれば）DBアクセスAPIアプリ
 * HTTPファイルのディレクトリ設計（相対パスをnginxのlocationとして表現する）
-  * / ： 公開ディレクトリ（ルートディレクトリ）。HTMLファイルは認証なしで閲覧できる。
+  * / ： 公開ディレクトリ（ルートディレクトリ）。HTMLファイルは認証なしで閲覧できる。←この設定は固定。
     * /webadmin/ ： 非公開ディレクトリ１（上記DBアクセスUI/API向け）。HTMLファイルに認証が必要とする。
     * /sysadmin/ ： 非公開ディレクトリ２（ローカルサーバのコンディションを確認するため、syslog見るとかCPU/Mem/Disk監視とかやる）。HTMLファイルに認証が必要とする。
+    * その他、 `<１個下のディレクトリ>` のみ、認証対応する。
 
 Webサーバは nginx をコンテナで採用する。 Apache や Tomcat をホストで利用するのであれば設定が容易なので面白みがない。
 
@@ -52,6 +53,14 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
   ```
 
   上記、 `POSTGRES_PASSWORD=mysecretpassword` は適宜変更すること。本書ではこのままの設定として話を進める。
+
+  起動確認は以下のとおり。
+
+  ```bash
+  $ docker ps
+  CONTAINER ID   IMAGE                COMMAND                  CREATED          STATUS          PORTS                                       NAMES
+  87f9ed774677   postgres             "docker-entrypoint.s…"   18 hours ago     Up 18 hours     0.0.0.0:5432->5432/tcp, :::5432->5432/tcp   some-postgres
+  ```
 
 * （必要があれば）サーバの動作確認を行う。
   * ホスト名（IPアドレス）の確認
@@ -122,6 +131,8 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
   * locationリスト \
     http.server は唯一との強い仮定を置き、その中のlocation一覧を作成する。
     * （主キー） location（設定先URL）
+      * location `/` は設定不可。
+      * location `/hogehoge/` のみ設定可。location値には `hogehoge` 部分のみを設定する。
     * auth_basic （ngx_http_auth_basic_module のauth_basic設定。文字列offは設定offとして扱うため不可）
     * auth_basic_user_file （ngx_http_auth_basic_module のauth_basic_user_file設定）
 
@@ -152,9 +163,9 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
                           Table "public.location"
       Column  |          Type           | Collation | Nullable | Default 
     ----------+-------------------------+-----------+----------+---------
-     file     | character varying(32)   |           |          | 
-     type     | character varying(32)   |           |          | 
      location | character varying(2048) |           |          | 
+     type     | character varying(32)   |           |          | 
+     file     | character varying(32)   |           |          | 
 
     settings_nginx=# \q
     ```
@@ -283,3 +294,176 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
 ### datavol コンテナの設定
 
 ### Nginx コンテナの設定
+
+* Nginx サーバ は Dockerオフィシャルサイトイメージ https://hub.docker.com/_/nginx から取得してくる。 \
+  後で、 設定を postgreSQL から持ってきて出力するスクリプトを仕込むので、 Dockerfile を作成しておく。
+
+  ```bash
+  echo "FROM nginx" > Dockerfile
+  docker build -t some-content-nginx .
+  docker run --name some-nginx -d -p 80:80 some-content-nginx
+  ```
+
+  コンテナ起動確認は以下のとおり。
+
+  ```bash
+  $ docker ps
+  CONTAINER ID   IMAGE                COMMAND                  CREATED          STATUS          PORTS                                       NAMES
+  bdf53be7b507   some-content-nginx   "/docker-entrypoint.…"   33 seconds ago   Up 10 seconds   0.0.0.0:80->80/tcp, :::80->80/tcp           some-nginx
+  87f9ed774677   postgres             "docker-entrypoint.s…"   18 hours ago     Up 18 hours     0.0.0.0:5432->5432/tcp, :::5432->5432/tcp   some-postgres
+  ```
+
+  コンテナの動作確認は以下の通り。
+
+  ```bash
+  $ curl http://localhost/
+  <!DOCTYPE html>
+  <html>
+  <head>
+  <title>Welcome to nginx!</title>
+  <style>
+  html { color-scheme: light dark; }
+  body { width: 35em; margin: 0 auto;
+  font-family: Tahoma, Verdana, Arial, sans-serif; }
+  </style>
+  </head>
+  <body>
+  <h1>Welcome to nginx!</h1>
+  <p>If you see this page, the nginx web server is successfully installed and
+  working. Further configuration is required.</p>
+
+  <p>For online documentation and support please refer to
+  <a href="http://nginx.org/">nginx.org</a>.<br/>
+  Commercial support is available at
+  <a href="http://nginx.com/">nginx.com</a>.</p>
+
+  <p><em>Thank you for using nginx.</em></p>
+  </body>
+  </html>
+  ```
+
+* 設定ファイルの調査・確認
+
+  * /docker-entrypoint.sh の中身
+    中身の超抜粋は以下のとおりなので、 `/docker-entrypoint.d/` ディレクトリ以下に `.sh` ファイルを置けば、よしなにやってくれることがわかる。 `sort -V` が入っているので、シェルスクリプト名は `000_init.sh` のように、固定桁数の番号を頭につけるのが望ましそう。古き良きLinuxの伝統（と個人的に思っている init.d のルール）に沿って、数字の桁数は3桁がよいか。
+
+    ```bash
+    if [ "$1" = "nginx" ] || [ "$1" = "nginx-debug" ]; then
+        if /usr/bin/find "/docker-entrypoint.d/" -mindepth 1 -maxdepth 1 -type f -print -quit 2>/dev/null | read v; then
+            find "/docker-entrypoint.d/" -follow -type f -print | sort -V | while read -r f; do
+                case "$f" in
+                    *.sh)
+                      entrypoint_log "$0: Launching $f";
+                      "$f"
+                esac
+            done
+        fi
+    fi
+    exec "$@"
+    ```
+
+    つまり、固定の追加処理は Dockerfile で中に放り込むことになる。
+
+  * nginx.conf の中身
+    設定変更のためには `/etc/nginx/nginx.conf` をカスタマイズしろと公式ドキュメントに書いてある。
+    しかし、以下のとおり、 nginx.conf のカスタマイズは基本的に筋違いであり `/etc/nginx/conf.d/*.conf` に登録していくのが適切に見える。
+
+    ```bash
+    $ docker exec -it some-nginx bash
+    # cat /etc/nginx/nginx.conf | grep -v "^\s*#" | grep -v "^\s*$"
+    user  nginx;
+    worker_processes  auto;
+    error_log  /var/log/nginx/error.log notice;
+    pid        /var/run/nginx.pid;
+    events {
+        worker_connections  1024;
+    }
+    http {
+        include       /etc/nginx/mime.types;
+        default_type  application/octet-stream;
+        log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                          '$status $body_bytes_sent "$http_referer" '
+                          '"$http_user_agent" "$http_x_forwarded_for"';
+        access_log  /var/log/nginx/access.log  main;
+        sendfile        on;
+        keepalive_timeout  65;
+        include /etc/nginx/conf.d/*.conf;
+    }
+    ```
+
+  * default.conf の中身
+    上記 `include` にて `/etc/nginx/conf.d/*.conf` が指定されているので、その他設定ファイルはそこにある。
+
+    ```bash
+    $ docker exec -it some-nginx bash
+    # ls -l /etc/nginx/conf.d/*.conf
+    -rw-r--r-- 1 root root 1093 Dec 24 04:50 /etc/nginx/conf.d/default.conf
+    # cat /etc/nginx/conf.d/default.conf | grep -v "^\s*#" | grep -v "^\s*$"
+    server {
+        listen       80;
+        listen  [::]:80;
+        server_name  localhost;
+        location / {
+            root   /usr/share/nginx/html;
+            index  index.html index.htm;
+        }
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   /usr/share/nginx/html;
+        }
+    }
+    # cd /usr/share/nginx/html
+    /usr/share/nginx/html# ls -l
+    total 8
+    -rw-r--r-- 1 root root 497 Oct 24 13:46 50x.html
+    -rw-r--r-- 1 root root 615 Oct 24 13:46 index.html
+    /usr/share/nginx/html# cat index.html 
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Welcome to nginx!</title>
+    <style>
+    html { color-scheme: light dark; }
+    body { width: 35em; margin: 0 auto;
+    font-family: Tahoma, Verdana, Arial, sans-serif; }
+    </style>
+    </head>
+    <body>
+    <h1>Welcome to nginx!</h1>
+    <p>If you see this page, the nginx web server is successfully installed and
+    working. Further configuration is required.</p>
+
+    <p>For online documentation and support please refer to
+    <a href="http://nginx.org/">nginx.org</a>.<br/>
+    Commercial support is available at
+    <a href="http://nginx.com/">nginx.com</a>.</p>
+
+    <p><em>Thank you for using nginx.</em></p>
+    </body>
+    </html>
+    /usr/share/nginx/html# cat 50x.html 
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Error</title>
+    <style>
+    html { color-scheme: light dark; }
+    body { width: 35em; margin: 0 auto;
+    font-family: Tahoma, Verdana, Arial, sans-serif; }
+    </style>
+    </head>
+    <body>
+    <h1>An error occurred.</h1>
+    <p>Sorry, the page you are looking for is currently unavailable.<br/>
+    Please try again later.</p>
+    <p>If you are the system administrator of this resource then you should check
+    the error log for details.</p>
+    <p><em>Faithfully yours, nginx.</em></p>
+    </body>
+    </html>
+    ```
+
+  * カスタマイズスクリプトの設計方針
+    * `/docker-entrypoint.d/000_setup_from_postgres.sh` ファイルを Dockerfile にて投入する。このスクリプトは以下のことを実現する。
+      * `/usr/share/nginx/default.conf` があれば削除する。
+      * datavolコンテナ内に生成されている `postgres.conf` を、起動時に `/usr/share/nginx/` に配置する。 default.conf と同等の設定は、postgres.conf 生成時に保証する。
