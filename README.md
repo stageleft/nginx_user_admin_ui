@@ -328,7 +328,6 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
     EOF
     ```
 
-
 ### Nginx コンテナの設定
 
 * Nginx サーバ は Dockerオフィシャルサイトイメージ https://hub.docker.com/_/nginx から取得してくる。 \
@@ -509,5 +508,21 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
 
   * カスタマイズスクリプトの設計方針
     * `/docker-entrypoint.d/000_setup_from_postgres.sh` ファイルを Dockerfile にて投入する。このスクリプトは以下のことを実現する。
-      * `/usr/share/nginx/default.conf` があれば削除する。
-      * datavolコンテナ内に生成されている `postgres.conf` を、起動時に `/usr/share/nginx/` に配置する。 default.conf と同等の設定は、postgres.conf 生成時に保証する。
+      * `/etc/nginx/conf.d/default.conf` があれば削除する。
+      * datavolコンテナ内に生成されている `postgres.conf` を、起動時に `/etc/nginx/conf.d/` に配置する。 default.conf と同等の設定は、postgres.conf 生成時に保証する。
+    * `000_setup_from_postgres.sh` 実装案
+
+      ```bash
+      # cat /docker-entrypoint.d/000_setup_from_postgres.sh
+      #/usr/bin/bash
+
+      # remove previous settings
+      find "/etc/nginx/conf.d/" -type f | while read -r f; do
+        rm "$f" 
+      done
+
+      # add new setting
+      cp /datavol/nginx_settings/*.conf /etc/nginx/conf.d/
+      ```
+
+###
