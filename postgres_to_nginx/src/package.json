@@ -1,0 +1,15 @@
+{
+  "name": "postgresql_to_nginx",
+  "version": "1.0.0",
+  "description": "nginx setup file generator from data in PostgreSQL",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Shogo Sugano",
+  "license": "WTFPL",
+  "dependencies": {
+    "pg": "^8.11.3"
+  }
+}

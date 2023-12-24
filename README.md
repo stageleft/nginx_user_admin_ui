@@ -37,9 +37,26 @@ Webサーバは nginx をコンテナで採用する。 Apache や Tomcat をホ
 * [nginx の Configuration](http://nginx.org/en/docs/http/configuring_https_servers.html) にある、
   [Module ngx_http_auth_basic_module](http://nginx.org/en/docs/http/ngx_http_auth_basic_module.html) の書き換えを考える。
 
-### Docker のインストール
+### Docker のインストールと設定
 
 Docker のインストールは、公式サイト https://docs.docker.com/engine/install/ を参照して実施する。
+
+* Docker ネットワークを作成する。
+
+  ```bash
+  docker network create localwebnw
+  ```
+
+* Docker ネットワークを確認する。
+
+  ```bash
+  $ docker network ls
+  NETWORK ID     NAME         DRIVER    SCOPE
+  3de504add449   bridge       bridge    local
+  40fdce76b671   host         host      local
+  ca46dba8774b   localwebnw   bridge    local
+  f1afd560a3ef   none         null      local
+  ```
 
 ### datavol コンテナの設定
 
@@ -80,7 +97,7 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
 * サーバを実行する。
 
   ```bash
-  docker run -d --restart=always --volumes-from datavol --name dbserver -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres
+  docker run -d --restart=always --network localwebnw --volumes-from datavol --name dbserver -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres
   ```
 
   上記、 `POSTGRES_PASSWORD=mysecretpassword` は適宜変更すること。本書ではこのままの設定として話を進める。
@@ -525,4 +542,8 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
       cp /datavol/nginx_settings/*.conf /etc/nginx/conf.d/
       ```
 
-###
+### postgresql_to_nginx コンテナ（自作）
+
+postgreSQL に入っている location や user のデータを用いて、nginx 向けの BASIC認証設定ファイルを出力するプログラムを準備する。
+
+詳細は postgres_to_nginx/Readme.mdを参照すること。
