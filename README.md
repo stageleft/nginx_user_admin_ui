@@ -39,7 +39,7 @@ Webサーバは nginx をコンテナで採用する。 Apache や Tomcat をホ
 
 ### Docker のインストールと設定
 
-Docker のインストールは、公式サイト https://docs.docker.com/engine/install/ を参照して実施する。
+Docker のインストールは、[Docker公式サイトのインストール手順書](https://docs.docker.com/engine/install/) を参照して実施する。
 
 * Docker ネットワークを作成する。
 
@@ -60,7 +60,7 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
 
 ### datavol コンテナの設定
 
-* datavol コンテナは DockerオフィシャルサイトのDebianイメージ https://hub.docker.com/_/debian から作成する。
+* datavol コンテナは [DockerオフィシャルサイトのDebianイメージ](https://hub.docker.com/_/debian) から作成する。
 
   ```bash
   echo "FROM debian" > Dockerfile
@@ -88,7 +88,7 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
 
 ### PostgreSQL コンテナの設定
 
-* PostgreSQL サーバ は Dockerオフィシャルサイトイメージ https://hub.docker.com/_/postgres から取得してくる。
+* PostgreSQL サーバ は [Dockerオフィシャルサイトのpostgresイメージ](https://hub.docker.com/_/postgres) を取得してくる。
 
   ```bash
   docker pull postgres
@@ -270,18 +270,19 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
     ```
 
   * locationリスト \
-    * location `/` は設定しないこと（）。
+    * location `/` および `/default/` は設定しないこと。 `location.conf` のファイルを生成する。
+    * auth_basic_user_file に指定したfilenameパラメータに従い、 `filename.sec` のファイルを生成する。
     * location `/webadmin/` の設定。\
       auth_basic "web access admin"; \
-      auth_basic_user_file "conf/webadmin_passwd";
+      auth_basic_user_file "webadmin_passwd";
     * location `/sysadmin/` の設定。 \
       auth_basic "system admin"; \
-      auth_basic_user_file "conf/sysadmin_passwd";
+      auth_basic_user_file "sysadmin_passwd";
 
     ```bash
     $ psql -d settings_nginx -U postgres -h 172.17.0.1 <<EOF
-    INSERT INTO location (location, type, file) VALUES ('webadmin', 'web admin', 'conf/webadmin_passwd');
-    INSERT INTO location (location, type, file) VALUES ('sysadmin', 'system admin', 'conf/sysadmin_passwd');
+    INSERT INTO location (location, type, file) VALUES ('webadmin', 'web admin', 'webadmin_passwd');
+    INSERT INTO location (location, type, file) VALUES ('sysadmin', 'system admin', 'sysadmin_passwd');
     EOF
     ```
 
@@ -292,10 +293,10 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
     SELECT * FROM location;
     EOF
     Password for user postgres: 
-     location |     type     |         file         
-    ----------+--------------+----------------------
-     webadmin | web admin    | conf/webadmin_passwd
-     sysadmin | system admin | conf/sysadmin_passwd
+     location |     type     |      file       
+    ----------+--------------+-----------------
+     webadmin | web admin    | webadmin_passwd
+     sysadmin | system admin | sysadmin_passwd
     (2 rows)
     ```
 
@@ -308,17 +309,17 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
     ```
 
   * userfileユーザ一覧 \
-    * ファイル `conf/webadmin_passwd` の設定。
+    * ファイル `webadmin_passwd` の設定。
       * ユーザ1 name=webadmin, password=webpass, comment=なし
       * ユーザ2 name=sysadmin, password=syspass, comment=same as /sysadmin/ dir.
-    * ファイル `conf/sysadmin_passwd` の設定。
+    * ファイル `sysadmin_passwd` の設定。
       * ユーザ1 name=sysadmin, password=syspass, comment=なし
 
     ```bash
     $ psql -d settings_nginx -U postgres -h 172.17.0.1 <<EOF
-    INSERT INTO userfile (file, username, password) VALUES ('conf/webadmin_passwd', 'webadmin', 'webpass');
-    INSERT INTO userfile (file, username, password, comment) VALUES ('conf/webadmin_passwd', 'sysadmin', 'syspass', 'same as /sysadmin/ dir.');
-    INSERT INTO userfile (file, username, password) VALUES ('conf/sysadmin_passwd', 'sysadmin', 'syspass');
+    INSERT INTO userfile (file, username, password) VALUES ('webadmin_passwd', 'webadmin', 'webpass');
+    INSERT INTO userfile (file, username, password, comment) VALUES ('webadmin_passwd', 'sysadmin', 'syspass', 'same as /sysadmin/ dir.');
+    INSERT INTO userfile (file, username, password) VALUES ('sysadmin_passwd', 'sysadmin', 'syspass');
     EOF
     ```
 
@@ -329,11 +330,11 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
     SELECT * FROM userfile;
     EOF
     Password for user postgres: 
-             file         | username | password |         comment         
-    ----------------------+----------+----------+-------------------------
-     conf/webadmin_passwd | webadmin | webpass  | 
-     conf/webadmin_passwd | sysadmin | syspass  | same as /sysadmin/ dir.
-     conf/sysadmin_passwd | sysadmin | syspass  | 
+          file       | username | password |         comment         
+    -----------------+----------+----------+-------------------------
+     webadmin_passwd | webadmin | webpass  | 
+     webadmin_passwd | sysadmin | syspass  | same as /sysadmin/ dir.
+     sysadmin_passwd | sysadmin | syspass  | 
     (3 rows)
     ```
 
@@ -347,7 +348,7 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
 
 ### Nginx コンテナの設定
 
-* Nginx サーバ は Dockerオフィシャルサイトイメージ https://hub.docker.com/_/nginx から取得してくる。 \
+* Nginx サーバ は [Dockerオフィシャルサイトのnginxイメージ](https://hub.docker.com/_/nginx) を取得してくる。 \
   後で、 設定を postgreSQL から持ってきて出力するスクリプトを仕込むので、 Dockerfile を作成しておく。
 
   ```bash
@@ -525,21 +526,23 @@ Docker のインストールは、公式サイト https://docs.docker.com/engine
 
   * カスタマイズスクリプトの設計方針
     * `/docker-entrypoint.d/000_setup_from_postgres.sh` ファイルを Dockerfile にて投入する。このスクリプトは以下のことを実現する。
-      * `/etc/nginx/conf.d/default.conf` があれば削除する。
-      * datavolコンテナ内に生成されている `postgres.conf` を、起動時に `/etc/nginx/conf.d/` に配置する。 default.conf と同等の設定は、postgres.conf 生成時に保証する。
+      * `/etc/nginx/conf.d/default.conf` があればそのままとし、他のファイルは削除する。
+      * datavolコンテナ内に生成されている `location.conf` を、起動時に `/etc/nginx/conf.d/` に配置する。
+      * datavolコンテナ内に生成されている `userfile.sec` を、起動時に `/etc/nginx/conf.d/` に配置する。
     * `000_setup_from_postgres.sh` 実装案
 
       ```bash
       # cat /docker-entrypoint.d/000_setup_from_postgres.sh
-      #/usr/bin/bash
+      #!/usr/bin/bash
 
       # remove previous settings
-      find "/etc/nginx/conf.d/" -type f | while read -r f; do
+      find '/etc/nginx/conf.d/' -type f | grep -v 'default.conf' | while read -r f; do
         rm "$f" 
       done
 
       # add new setting
       cp /datavol/nginx_settings/*.conf /etc/nginx/conf.d/
+      cp /datavol/nginx_settings/*.sec /etc/nginx/conf.d/
       ```
 
 ### postgresql_to_nginx コンテナ（自作）
