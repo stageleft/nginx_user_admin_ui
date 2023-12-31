@@ -1,0 +1,35 @@
+version: '3.9'
+networks:
+  localwebnw:
+    external: false
+volumes:
+  datavol:
+services:
+  dbserver:
+    image: 'postgres'
+    container_name: 'dbserver'
+    networks:
+      - localwebnw
+    ports:
+      - "5432:5432"
+    volumes:
+      - datavol:/datavol
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+  webserver:
+    build: ./nginx/.
+    container_name: 'webserver'
+    networks:
+      - localwebnw
+    ports:
+      - "80:80"
+    volumes:
+      - datavol:/datavol
+    environment:
+      - POSTGRES_SERVER=dbserver
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
