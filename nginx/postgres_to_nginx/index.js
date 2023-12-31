@@ -1,6 +1,6 @@
 // packages
 import * as fs from 'node:fs/promises';
-//import * as crypto from 'node:crypto';
+import { execSync } from 'node:child_process';
 
 import pkg from 'pg';
 const { Client } = pkg;
@@ -27,7 +27,9 @@ try {
 
     files.rows.forEach((file_obj) => {
         console.log(`write ${file_obj.username} info into ${file_obj.file}.`);
-        const user_pass = `${file_obj.username}:{plain}${file_obj.password}\n`; // TODO: use another password scheme.
+        const user = file_obj.username;
+        const pass = execSync(`openssl passwd -6 ${file_obj.password}`).toString();
+        const user_pass = `${user}:${pass}`; // pass contains \n
         fs.writeFile(`/etc/nginx/conf.d/${file_obj.file}.sec`, user_pass, {encoding: 'utf8', flag: 'a'});
     });
 
