@@ -395,4 +395,4 @@ Docker （Docker Compose を含む）のインストールは、[Docker公式サ
     * datavolコンテナ内に生成されている `/etc/nginx/conf.d/userfile.sec` を削除する。
     * datavolコンテナ内に生成されている `/etc/nginx/conf.d/userfile.sec` を生成する。 \
       詳細は postgres_to_nginx/Readme.mdを参照すること。
-  * 上記パスワードファイルを読み込むための `/etc/nginx/conf.d/*.conf` は別途、 Dockerfile にて生成しておく。
+  * 上記パスワードファイルを読み込むための `/etc/nginx/conf.d/*.conf` は別途、手動で作成し、 Dockerfile から導入する。

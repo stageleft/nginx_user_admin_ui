@@ -1,4 +1,6 @@
+// packages
 import * as fs from 'node:fs/promises';
+//import * as crypto from 'node:crypto';
 
 import pkg from 'pg';
 const { Client } = pkg;
@@ -12,37 +14,27 @@ const client = new Client({
     password: process.env.POSTGRES_PASSWORD
 });
 
-// methods
-const user_conf = async (filename, rows) => {
-    // rows : Array of Object. Object contains 2 keys.
-    //        username: string
-    //        password: string
-    const output_text = "";
-    rows.forEach((row) => function(){
-        output_text = output_text + `${row.username}:${row.password}\n`;
-    });
-    fs.writeFileSync(`/etc/nginx/conf.d/${filename}.sec`, output_text);
-};
-
 // main process
+var main_process_completed = 1; // 0: true, >0: error in any process.
 try {
     await client.connect();
     console.log(`connected to ${process.env.POSTGRES_DB}`);
 
-    const query_string = 'SELECT file FROM userfile GROUP by file;';
+    const query_string = 'SELECT * FROM userfile order by file asc;';
     console.log(query_string);
     const files = await client.query(query_string);
     console.table(files.rows);
 
-    files.rows.forEach(async (filename) => {
-        const query_string = `SELECT username,password FROM userfile where file = '${filename}';`;
-        console.log(query_string);
-        const users = await client.query(query_string);
-        console.table(users.rows);
-        user_conf(filename, users.rows);
-    });    
+    files.rows.forEach((file_obj) => {
+        console.log(`write ${file_obj.username} info into ${file_obj.file}.`);
+        const user_pass = `${file_obj.username}:{plain}${file_obj.password}\n`; // TODO: use another password scheme.
+        fs.writeFile(`/etc/nginx/conf.d/${file_obj.file}.sec`, user_pass, {encoding: 'utf8', flag: 'a'});
+    });
+
+    main_process_completed = 0;
 } catch (e) {
     console.log(e);
 } finally {
     await client.end();
 }
+process.exit(main_process_completed);
