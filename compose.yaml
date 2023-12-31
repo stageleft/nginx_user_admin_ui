@@ -3,6 +3,7 @@ networks:
   localwebnw:
     external: false
 volumes:
+  postgresdb:
   datavol:
 services:
   dbserver:
@@ -13,7 +14,9 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - datavol:/datavol
+      - type: volume
+        source: postgresdb
+        target: /var/lib/postgresql/data
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
@@ -30,6 +33,6 @@ services:
     environment:
       - POSTGRES_SERVER=dbserver
       - POSTGRES_PORT=5432
-      - POSTGRES_DB=postgres
+      - POSTGRES_DB=settings_nginx
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=mysecretpassword

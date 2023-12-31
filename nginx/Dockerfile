@@ -20,3 +20,6 @@ COPY sample.conf /etc/nginx/conf.d/
 EXPOSE 80
 
 # CMD コマンドはオフィシャルイメージから提供される。記載しないこと。
+
+# debug用追加設定
+# RUN apt update && apt install -y vim
