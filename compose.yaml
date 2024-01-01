@@ -7,7 +7,7 @@ volumes:
   datavol:
 services:
   dbserver:
-    image: 'postgres'
+    build: ./postgres/.
     container_name: 'dbserver'
     networks:
       - localwebnw
@@ -21,6 +21,7 @@ services:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=mysecretpassword
+    restart: always
   webserver:
     build: ./nginx/.
     container_name: 'webserver'
@@ -36,3 +37,18 @@ services:
       - POSTGRES_DB=settings_nginx
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=mysecretpassword
+    restart: always
+  webadmin:
+    build: ./webadmin/.
+    container_name: 'webadmin'
+    networks:
+      - localwebnw
+    ports:
+      - "3000:3000"
+    environment:
+      - POSTGRES_SERVER=dbserver
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=settings_nginx
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+    restart: always

@@ -1,4 +1,4 @@
-FROM nginx
+FROM nginx:latest
 
 # setup applications.
 RUN apt update && apt install -y nodejs npm

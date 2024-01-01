@@ -41,13 +41,18 @@ Webサーバは nginx をコンテナで採用する。 Apache や Tomcat をホ
 
 Docker （Docker Compose を含む）のインストールは、[Docker公式サイトのインストール手順書](https://docs.docker.com/engine/install/) を参照して実施する。
 
-* Docker compose の実行
+* Docker compose の対話型実行
+  ```bash
+  docker compose build && docker compose up
+  ```
+
+* Docker compose の常駐実行
 
   ```bash
   docker compose up -d
   ```
 
-* Docker compose の削除・切り戻し
+* Docker compose 常駐実行の削除・切り戻し
 
   ```bash
   docker compose down
