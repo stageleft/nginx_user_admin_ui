@@ -3,6 +3,7 @@ const express = require('express');
 const app = express();
 const pkg = require('pg');
 const { Client } = pkg;
+const { execSync } = require('node:child_process');
 
 // variables for Express. see https://expressjs.com/ja/4x/api.html#req
 const port = 3000;
@@ -158,6 +159,29 @@ app.get('/api/', (req, res) => get_api(req, res));
 app.post('/api/', (req, res) => post_api(req, res));
 app.put('/api/', (req, res) => put_api(req, res));
 app.delete('/api/', (req, res) => delete_api(req, res));
+
+// container restart api
+app.post('/api/restart', async (req, res) => {
+    try {
+        console.log(`/api/restart start.`);
+        console.log(req.body);
+
+        if (typeof req.body.container != 'string'){
+            console.log('req.body.container is not string.');
+            res.status(400).send('API parameter is illegal.');
+        } else {
+            res.status(202).send(`restart ${req.body.container } accepted.`);
+            execSync(`curl -X POST --unix-socket /var/run/docker.sock http:///v1.43/containers/${req.body.container}/restart`);
+        }
+
+        console.log(`/api/restart end.`);
+    } catch (e) {
+        console.log(e);
+        res.status(400).send({error: `API failed. detail : ${e}`});
+
+        console.log(`API failed. detail : ${e}.\n`);
+    }
+});
 
 app.listen(port, () => {
   console.log(`webadmin server listening on port ${port}`)
