@@ -11,4 +11,9 @@ WORKDIR /app
 RUN npm install
 EXPOSE 3000
 
-CMD [ "node", "index.js" ]
+# setup initiator
+COPY init.sh /
+WORKDIR /
+RUN chmod +x init.sh
+
+CMD [ "/usr/bin/bash", "-c", "/init.sh" ]
