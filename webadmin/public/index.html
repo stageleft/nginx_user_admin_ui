@@ -1,9 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
     <head>
         <title>webadmin UI</title>
-    </head>
+<!--        <link rel="shortcut icon" href="/image/favicon.ico">    -->
+        <link href="./node_modules/tabulator-tables/dist/css/tabulator.min.css" rel="stylesheet">
+        <script type="text/javascript" src="./node_modules/tabulator-tables/dist/js/tabulator.min.js"></script>
+
+</head>
     <body>
         <h1>webadmin UI</h1>
+        <div id="control_menu">
+            <button href="javascript:void(0)" rel="nofollow" onClick="table.replaceData('api/')">ユーザ一覧読み出し</button>
+            <button href="javascript:void(0)" rel="nofollow" onClick="table.download('csv','data.csv', {bom:true})">CSVダウンロード</button>
+            <button href="javascript:void(0)" rel="nofollow"
+             onClick="table.setHeaderFilterValue('cn','');table.setHeaderFilterValue('player','');table.setHeaderFilterValue('count','');table.setHeaderFilterValue('rank','')">フィルタ初期化</button>
+        </div>
+        <div id="auth_user_table"></div>
+        <script type="text/javascript">
+            var tabledata = [];
+            var table = new Tabulator("#auth_user_table",{
+                data:tabledata,
+                columns:[
+                    {title:"グループ", field:"file", headerFilter:true,
+                     headerFilterPlaceholder:".htaccess ファイルの名前"},
+                    {title:"ユーザ名", field:"username", headerFilter:true,
+                     headerFilterPlaceholder:"ユーザ名（各グループに登録のこと）"},
+                    {title:"パスワード", field:"password", headerFilter:true,
+                     headerFilterPlaceholder:"パスワード（グループごとに異なっていてよい）"},
+                    {title:"摘要", field:"comment", headerFilter:true}
+                ]
+            });
+        </script>
     </body>
 </html>
