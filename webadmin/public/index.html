@@ -11,6 +11,7 @@
         <h1>webadmin UI</h1>
         <div id="control_menu">
             <button href="javascript:void(0)" rel="nofollow" onClick="table.replaceData('api/')">ユーザ一覧読み出し</button>
+            <button href="javascript:void(0)" rel="nofollow" onClick="table.addRow({file:null, username:null},false)">末尾に空行追加</button>
             <button href="javascript:void(0)" rel="nofollow" onClick="table.download('csv','data.csv', {bom:true})">CSVダウンロード</button>
             <button href="javascript:void(0)" rel="nofollow"
              onClick="table.setHeaderFilterValue('cn','');table.setHeaderFilterValue('player','');table.setHeaderFilterValue('count','');table.setHeaderFilterValue('rank','')">フィルタ初期化</button>
@@ -22,14 +23,51 @@
                 data:tabledata,
                 columns:[
                     {title:"グループ", field:"file", headerFilter:true,
-                     headerFilterPlaceholder:".htaccess ファイルの名前"},
+                        headerFilterPlaceholder:".htaccess ファイルの名前",
+                        editor:"input", cellEdited(cell){updateData(cell.getRow().getData());}},
                     {title:"ユーザ名", field:"username", headerFilter:true,
-                     headerFilterPlaceholder:"ユーザ名（各グループに登録のこと）"},
+                        headerFilterPlaceholder:"ユーザ名（各グループに登録のこと）",
+                        editor:"input", cellEdited(cell){updateData(cell.getRow().getData());}},
                     {title:"パスワード", field:"password", headerFilter:true,
-                     headerFilterPlaceholder:"パスワード（グループごとに異なっていてよい）"},
-                    {title:"摘要", field:"comment", headerFilter:true}
+                        headerFilterPlaceholder:"パスワード（グループごとに異なっていてよい）",
+                        editor:"input", cellEdited(cell){updateData(cell.getRow().getData());}},
+                    {title:"摘要", field:"comment", headerFilter:true,
+                        editor:"input", cellEdited(cell){updateData(cell.getRow().getData());}}
                 ]
             });
+            // POST メソッド see. https://developer.mozilla.org/ja/docs/Web/API/Fetch_API/Using_Fetch
+            async function updateData(data) {
+                const resp_put = await fetch('api/', {
+                    method: "PUT",
+                    cache: "no-cache",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(data),
+                });
+                if (!resp_put.ok) {
+                    await fetch('api/', {
+                        method: "POST",
+                        cache: "no-cache",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(data),
+                    });
+                }
+                return null;
+            }
+            async function deleteData(data) {
+                await fetch('api/', {
+                    method: "DELETE",
+                    cache: "no-cache",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(data),
+                });
+                return null;
+            }
         </script>
     </body>
 </html>

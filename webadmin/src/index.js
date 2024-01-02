@@ -44,25 +44,27 @@ const post_api = async function (req, res) {
         console.log(req.body);
 
         if (typeof req.body.file != 'string'){
-            res.status(404).send('DELETE API parameter is illegal.')
-        }
-        if (typeof req.body.username != 'string'){
-            res.status(404).send('DELETE API parameter is illegal.')
-        }
-        if (typeof req.body.password != 'string'){
-            res.status(404).send('DELETE API parameter is illegal.')
-        }
-
-        let query_string;
-        if (typeof req.body.comment == 'string'){
-            query_string = `INSERT INTO userfile (file, username, password, comment) VALUES ('${req.body.file}', '${req.body.username}', '${req.body.password}', '${req.body.comment}');`;
+            console.log('req.body.file is not string.');
+            res.status(400).send('POST API parameter is illegal.');
+        } else if (typeof req.body.username != 'string'){
+            console.log('req.body.username is not string.');
+            res.status(400).send('POST API parameter is illegal.');
+        } else if (typeof req.body.password != 'string'){
+            console.log('req.body.password is not string.');
+            res.status(400).send('POST API parameter is illegal.');
         } else {
-            query_string = `INSERT INTO userfile (file, username, password) VALUES ('${req.body.file}', '${req.body.username}', '${req.body.password}');`;
-        }
-        const reply_object = await client.query(query_string);
+            let query_string;
+            if (typeof req.body.comment == 'string'){
+                query_string = `INSERT INTO userfile (file, username, password, comment) VALUES ('${req.body.file}', '${req.body.username}', '${req.body.password}', '${req.body.comment}');`;
+            } else {
+                query_string = `INSERT INTO userfile (file, username, password) VALUES ('${req.body.file}', '${req.body.username}', '${req.body.password}');`;
+            }
+            const reply_object = await client.query(query_string);
 
-        console.log(reply_object.rowCount);
-        res.status(200).send(reply_object.rowCount.toString()); // return '0' (fail) or '1' (success)
+            console.log(reply_object.rowCount);
+            res.status(200).send(reply_object.rowCount.toString()); // return '0' (fail) or '1' (success)
+        }
+
         console.log(`POST end.`);
     } catch (e) {
         console.log(e);
@@ -77,27 +79,39 @@ const put_api = async function (req, res) {
         console.log(`PUT start.`);
         console.log(req.body);
 
+        let update_executed = 0;
         if (typeof req.body.file != 'string'){
-            res.status(404).send('PUT API parameter is illegal.')
+            console.log('req.body.file is not string.');
+        } else if (typeof req.body.username != 'string'){
+            console.log('req.body.username is not string.');
+        } else {
+            if (typeof req.body.password == 'string'){
+                const query_string = `UPDATE userfile SET password = '${req.body.password}' WHERE file = '${req.body.file}' AND username = '${req.body.username}';`;
+                console.log(`query_string=${query_string}`);
+                const reply_object = await client.query(query_string);
+                console.log(reply_object.rowCount);
+                console.log(reply_object.rows);
+                update_executed = update_executed + reply_object.rowCount;
+            }
+    
+            if (typeof req.body.comment == 'string'){
+                const query_string = `UPDATE userfile SET comment = '${req.body.comment}' WHERE file = '${req.body.file}' AND username = '${req.body.username}';`;
+                console.log(`query_string=${query_string}`);
+                const reply_object = await client.query(query_string);
+                console.log(reply_object.rowCount);
+                console.log(reply_object.rows);
+                update_executed = update_executed + reply_object.rowCount;
+            }
         }
-        if (typeof req.body.username != 'string'){
-            res.status(404).send('PUT API parameter is illegal.')
+        if (update_executed == 0) {
+            res.status(400).send('PUT API parameter is illegal.');
+        } else {
+            const query_string = `SELECT * FROM userfile WHERE file = '${req.body.file}' AND username = '${req.body.username}';`;
+            const reply_object = await client.query(query_string);
+    
+            res.status(200).send(reply_object.rows);    
         }
 
-        if (typeof req.body.password == 'string'){
-            const query_string = `UPDATE userfile SET password = '${req.body.password}' WHERE file = '${req.body.file}' AND username = '${req.body.username}';`;
-            await client.query(query_string);
-        }
-
-        if (typeof req.body.comment == 'string'){
-            const query_string = `UPDATE userfile SET password = '${req.body.password}' WHERE file = '${req.body.file}' AND username = '${req.body.username}';`;
-            await client.query(query_string);
-        }
-
-        const query_string = `SELECT * FROM userfile WHERE file = '${req.body.file}' AND username = '${req.body.username}';`;
-        const reply_object = await client.query(query_string);
-
-        res.status(200).send(reply_object.rows);
         console.log(`PUT end.`);
     } catch (e) {
         console.log(e);
@@ -113,17 +127,19 @@ const delete_api = async function (req, res) {
         console.log(req.body);
 
         if (typeof req.body.file != 'string'){
-            res.status(404).send('DELETE API parameter is illegal.')
-        }
-        if (typeof req.body.username != 'string'){
-            res.status(404).send('DELETE API parameter is illegal.')
+            console.log('req.body.file is not string.');
+            res.status(400).send('DELETE API parameter is illegal.');
+        } else if (typeof req.body.username != 'string'){
+            console.log('req.body.username is not string.');
+            res.status(400).send('DELETE API parameter is illegal.');
+        } else {
+            const query_string = `DELETE FROM userfile WHERE file = '${req.body.file}' AND username = '${req.body.username}';`;
+            const reply_object = await client.query(query_string);
+    
+            console.log(reply_object.rowCount);
+            res.status(200).send(reply_object.rowCount.toString()); // return '0' (fail) or '1' (success)  
         }
 
-        const query_string = `DELETE FROM userfile WHERE file = '${req.body.file}' AND username = '${req.body.username}';`;
-        const reply_object = await client.query(query_string);
-
-        console.log(reply_object.rowCount);
-        res.status(200).send(reply_object.rowCount.toString()); // return '0' (fail) or '1' (success)
         console.log(`DELETE end.`);
     } catch (e) {
         console.log(e);
