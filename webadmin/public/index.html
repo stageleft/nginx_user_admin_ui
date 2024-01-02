@@ -22,21 +22,24 @@
             var table = new Tabulator("#auth_user_table",{
                 data:tabledata,
                 columns:[
-                    {title:"グループ", field:"file", headerFilter:true,
+                    {title:"グループ", field:"file", headerFilter:true, resizable:true,
                         headerFilterPlaceholder:".htaccess ファイルの名前",
-                        editor:"input", cellEdited(cell){updateData(cell.getRow().getData());}},
-                    {title:"ユーザ名", field:"username", headerFilter:true,
+                        editor:"input", cellEdited(cell){updateData(cell.getRow());}},
+                    {title:"ユーザ名", field:"username", headerFilter:true, resizable:true,
                         headerFilterPlaceholder:"ユーザ名（各グループに登録のこと）",
-                        editor:"input", cellEdited(cell){updateData(cell.getRow().getData());}},
-                    {title:"パスワード", field:"password", headerFilter:true,
+                        editor:"input", cellEdited(cell){updateData(cell.getRow());}},
+                    {title:"パスワード", field:"password", headerFilter:true, resizable:true,
                         headerFilterPlaceholder:"パスワード（グループごとに異なっていてよい）",
-                        editor:"input", cellEdited(cell){updateData(cell.getRow().getData());}},
-                    {title:"摘要", field:"comment", headerFilter:true,
-                        editor:"input", cellEdited(cell){updateData(cell.getRow().getData());}}
+                        editor:"input", cellEdited(cell){updateData(cell.getRow());}},
+                    {title:"摘要", field:"comment", headerFilter:true, resizable:true,
+                        editor:"input", cellEdited(cell){updateData(cell.getRow());}},
+                    {title:"削除ボタン", formatter:"buttonCross", hozAlign:"center", resizable:false,
+                        cellClick(e, cell){deleteData(cell.getRow());}}
                 ]
             });
             // POST メソッド see. https://developer.mozilla.org/ja/docs/Web/API/Fetch_API/Using_Fetch
-            async function updateData(data) {
+            async function updateData(row) {
+                const data = row.getData();
                 const resp_put = await fetch('api/', {
                     method: "PUT",
                     cache: "no-cache",
@@ -57,7 +60,8 @@
                 }
                 return null;
             }
-            async function deleteData(data) {
+            async function deleteData(row) {
+                const data = row.getData();
                 await fetch('api/', {
                     method: "DELETE",
                     cache: "no-cache",
@@ -66,6 +70,7 @@
                     },
                     body: JSON.stringify(data),
                 });
+                row.delete();
                 return null;
             }
         </script>
