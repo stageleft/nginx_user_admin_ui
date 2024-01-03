@@ -4,7 +4,7 @@ networks:
     external: false
 volumes:
   postgresdb:
-  datavol:
+  sysadminhtml:
 services:
   dbserver:
     build: ./postgres/.
@@ -30,7 +30,9 @@ services:
     ports:
       - "80:80"
     volumes:
-      - datavol:/datavol
+      - type: volume
+        source: sysadminhtml
+        target: /usr/share/nginx/html/sysadmin
     environment:
       - POSTGRES_SERVER=dbserver
       - POSTGRES_PORT=5432
@@ -54,3 +56,10 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=mysecretpassword
     restart: always
+  sysadmin:
+    build: ./sysadmin/.
+    container_name: 'sysadmin'
+    volumes:
+      - type: volume
+        source: sysadminhtml
+        target: /usr/share/nginx/html/sysadmin
