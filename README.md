@@ -23,6 +23,8 @@ I want to create local web server with BASIC auth.
   * [Node.js](https://nodejs.org/en)
     * [Express](https://expressjs.com/ja/)
     * [Node-Postgres](https://node-postgres.com/)
+  * [Tabulator](https://tabulator.info/)
+  * [Debian Linux](https://www.debian.org/)
 
 ## 制限 Limitation
 
