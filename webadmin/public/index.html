@@ -13,7 +13,7 @@
             <button href="javascript:void(0)" rel="nofollow" onClick="table.addRow({file:null, username:null},false)">末尾に空行追加</button>
             <button href="javascript:void(0)" rel="nofollow" onClick="table.download('csv','data.csv', {bom:true})">CSVダウンロード</button>
             <button href="javascript:void(0)" rel="nofollow"
-                onClick="table.setHeaderFilterValue('cn','');table.setHeaderFilterValue('player','');table.setHeaderFilterValue('count','');table.setHeaderFilterValue('rank','')">
+                onClick="table.setHeaderFilterValue('cn','');table.setHeaderFilterValue('file','');table.setHeaderFilterValue('username','');table.setHeaderFilterValue('comment','')">
                 フィルタ初期化
             </button>
             <button href="javascript:void(0)" rel="nofollow"
@@ -35,7 +35,7 @@
                     {title:"ユーザ名", field:"username", headerFilter:true, resizable:true,
                         headerFilterPlaceholder:"ユーザ名（各グループに登録のこと）",
                         editor:"input", cellEdited(cell){updateData(cell.getRow());}},
-                    {title:"パスワード", field:"password", headerFilter:true, resizable:true,
+                    {title:"パスワード", field:"password", headerFilter:false, resizable:true,
                         headerFilterPlaceholder:"パスワード（グループごとに異なっていてよい）",
                         editor:"input", cellEdited(cell){updateData(cell.getRow());}},
                     {title:"摘要", field:"comment", headerFilter:true, resizable:true,

@@ -11,8 +11,6 @@ services:
     container_name: 'dbserver'
     networks:
       - localwebnw
-    ports:
-      - "5432:5432"
     volumes:
       - type: volume
         source: postgresdb
@@ -45,8 +43,6 @@ services:
     container_name: 'webadmin'
     networks:
       - localwebnw
-    ports:
-      - "3000:3000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
@@ -63,3 +59,4 @@ services:
       - type: volume
         source: sysadminhtml
         target: /usr/share/nginx/html/sysadmin
+    restart: always
