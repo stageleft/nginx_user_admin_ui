@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <title>webadmin UI</title>
+        <link href="./node_modules/tabulator-tables/dist/css/tabulator.min.css" rel="stylesheet">
+        <script type="text/javascript" src="./node_modules/tabulator-tables/dist/js/tabulator.min.js"></script>
+
+</head>
+    <body>
+        <h1>webadmin UI</h1>
+        <div id="control_menu">
+            <button href="javascript:void(0)" rel="nofollow" onClick="table.replaceData('api/')">ユーザ一覧読み出し</button>
+            <button href="javascript:void(0)" rel="nofollow" onClick="table.addRow({file:null, username:null},false)">末尾に空行追加</button>
+            <button href="javascript:void(0)" rel="nofollow" onClick="table.download('csv','data.csv', {bom:true})">CSVダウンロード</button>
+            <button href="javascript:void(0)" rel="nofollow"
+                onClick="table.setHeaderFilterValue('cn','');table.setHeaderFilterValue('file','');table.setHeaderFilterValue('username','');table.setHeaderFilterValue('comment','')">
+                フィルタ初期化
+            </button>
+            <button href="javascript:void(0)" rel="nofollow"
+                onClick="fetch('api/restart', {method: 'POST',
+                                               headers: {'Content-Type': 'application/json'},
+                                               body: JSON.stringify({'container': 'webserver'})})">
+                設定適用（Webサーバ再起動）
+            </button>
+        </div>
+        <div id="auth_user_table"></div>
+        <script type="text/javascript">
+            var tabledata = [];
+            var table = new Tabulator("#auth_user_table",{
+                data:tabledata,
+                columns:[
+                    {title:"グループ", field:"file", headerFilter:true, resizable:true,
+                        headerFilterPlaceholder:".htaccess ファイルの名前",
+                        editor:"input", cellEdited(cell){updateData(cell.getRow());}},
+                    {title:"ユーザ名", field:"username", headerFilter:true, resizable:true,
+                        headerFilterPlaceholder:"ユーザ名（各グループに登録のこと）",
+                        editor:"input", cellEdited(cell){updateData(cell.getRow());}},
+                    {title:"パスワード", field:"password", headerFilter:false, resizable:true,
+                        headerFilterPlaceholder:"パスワード（グループごとに異なっていてよい）",
+                        editor:"input", cellEdited(cell){updateData(cell.getRow());}},
+                    {title:"摘要", field:"comment", headerFilter:true, resizable:true,
+                        editor:"input", cellEdited(cell){updateData(cell.getRow());}},
+                    {title:"削除ボタン", formatter:"buttonCross", hozAlign:"center", resizable:false,
+                        cellClick(e, cell){deleteData(cell.getRow());}}
+                ]
+            });
+            // POST メソッド see. https://developer.mozilla.org/ja/docs/Web/API/Fetch_API/Using_Fetch
+            async function updateData(row) {
+                const data = row.getData();
+                const resp_put = await fetch('api/', {
+                    method: "PUT",
+                    cache: "no-cache",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(data),
+                });
+                if (!resp_put.ok) {
+                    await fetch('api/', {
+                        method: "POST",
+                        cache: "no-cache",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(data),
+                    });
+                }
+                return null;
+            }
+            async function deleteData(row) {
+                const data = row.getData();
+                await fetch('api/', {
+                    method: "DELETE",
+                    cache: "no-cache",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(data),
+                });
+                row.delete();
+                return null;
+            }
+        </script>
+    </body>
+</html>

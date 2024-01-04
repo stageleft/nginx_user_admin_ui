@@ -1,0 +1,62 @@
+version: '3.9'
+networks:
+  localwebnw:
+    external: false
+volumes:
+  postgresdb:
+  sysadminhtml:
+services:
+  dbserver:
+    build: ./postgres/.
+    container_name: 'dbserver'
+    networks:
+      - localwebnw
+    volumes:
+      - type: volume
+        source: postgresdb
+        target: /var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+    restart: always
+  webserver:
+    build: ./nginx/.
+    container_name: 'webserver'
+    networks:
+      - localwebnw
+    ports:
+      - "80:80"
+    volumes:
+      - type: volume
+        source: sysadminhtml
+        target: /usr/share/nginx/html/sysadmin
+    environment:
+      - POSTGRES_SERVER=dbserver
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=settings_nginx
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+    restart: always
+  webadmin:
+    build: ./webadmin/.
+    container_name: 'webadmin'
+    networks:
+      - localwebnw
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - POSTGRES_SERVER=dbserver
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=settings_nginx
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+    restart: always
+  sysadmin:
+    build: ./sysadmin/.
+    container_name: 'sysadmin'
+    volumes:
+      - type: volume
+        source: sysadminhtml
+        target: /usr/share/nginx/html/sysadmin
+    restart: always
