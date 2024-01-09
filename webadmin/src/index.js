@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: true })) // for parsing application/x-www
 console.log(`webadmin server start up. connecting ${process.env.POSTGRES_SERVER}... `);
 const client = new Client({
     host: process.env.POSTGRES_SERVER,
-    post: process.env.POSTGRES_PORT,
+    port: process.env.POSTGRES_PORT,
     database: process.env.POSTGRES_DB,
     user: process.env.POSTGRES_USER,
     password: process.env.POSTGRES_PASSWORD

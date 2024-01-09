@@ -8,7 +8,7 @@ const { Client } = pkg;
 // variables
 const client = new Client({
     host: process.env.POSTGRES_SERVER,
-    post: process.env.POSTGRES_PORT,
+    port: process.env.POSTGRES_PORT,
     database: process.env.POSTGRES_DB,
     user: process.env.POSTGRES_USER,
     password: process.env.POSTGRES_PASSWORD
