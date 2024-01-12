@@ -22,6 +22,12 @@
                                                body: JSON.stringify({'container': 'webserver'})})">
                 設定適用（Webサーバ再起動）
             </button>
+            <button href="javascript:void(0)" rel="nofollow"
+                onClick="fetch('api/restart', {method: 'POST',
+                                               headers: {'Content-Type': 'application/json'},
+                                               body: JSON.stringify({'container': 'webadmin'})})">
+                webadminユーザ強制復旧（webadmin アプリサーバ再起動）
+            </button>
         </div>
         <div id="auth_user_table"></div>
         <script type="text/javascript">
