@@ -47,6 +47,8 @@
 * Dockerfile : nginx コンテナへ各種ファイルを適用する。
 * sample.conf : nginx への設定。 `/etc/nginx/conf.d/default.conf` への差し替えとして機能する。
 * default.conf.org : 上記 default.conf そのもの。参照用。 ※nginx公式から提供された設定ファイルなので、WTFPLライセンス対象外につき注意。
+* index.html : nginx への設定。 `/usr/share/nginx/html/index.html` への差し替えとして機能する。
+* index.html.org : 上記 index.html そのもの。参照用。 ※nginx公式から提供された設定ファイルなので、WTFPLライセンス対象外につき注意。
 * 00_setup_from_postgres.sh : 下記アプリを実行するためのシェルスクリプト。実行結果として出力されたBASIC認証ファイルの確認およびアプリ再実行の機能も合わせ持つ。
   * 以前 `postgres_to_nginx/index.js` を実行した際に生成した認証ファイル `/etc/nginx/conf.d/*.sec` を削除する。
   * `postgres_to_nginx/index.js` を実行し、 `dbserver` に用意されたBASIC認証向けのユーザデータをもとに、BASIC認証ファイルを生成する。\
