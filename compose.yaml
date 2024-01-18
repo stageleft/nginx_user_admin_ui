@@ -56,6 +56,8 @@ services:
   sysadmin:
     build: ./sysadmin/.
     container_name: 'sysadmin'
+    networks:
+      - localwebnw
     volumes:
       - type: volume
         source: sysadminhtml

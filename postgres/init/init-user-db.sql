@@ -30,7 +30,7 @@ CREATE TABLE certfiles(
 -- if root_selfca, set file_name of root_pubkey
 -- if cacert/selfcert, set file_name of pubkey. relation of selfcert - root_selfca is not treated. use comment if necessary.
     cert_entity bytea,
-    comment     text,
+    comment     text
 -- TODO: set FOREIGN KEY.
 --    FOREIGN KEY (input_file)
 --        references cacert (file_name)
