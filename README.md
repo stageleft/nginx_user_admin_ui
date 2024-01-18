@@ -12,10 +12,12 @@ I want to create local web server with BASIC auth.
 * Config User / Password without editing .htaccess file.
 * Separete BASIC auth setting for each directory.
 
-## ライセンス
+## ライセンス License
 
-* プログラム・構成の本体は、 [WTFPL Version 2](LICENSE)として扱う。
-* 関連するアプリは、各々のライセンスに従う。
+* プログラム・構成の本体は、 [WTFPL Version 2](LICENSE)として扱う。 \
+  This app is under WTFPL Version 2.
+* 関連するアプリは、各々のライセンスに従う。 \
+  This app uses many software. They have their own license.
   * [Ubuntu Linux](https://jp.ubuntu.com/)
   * [Docker](https://www.docker.com/ja-jp/)
   * [PostgreSQL](https://www.postgresql.org/)
@@ -39,31 +41,32 @@ Never use with public communication lines, such as the Internet.
 
 WTFPL License allows you any change of this app.
 
-## インストール手順
+## インストール手順 How to Install (Only in Japanese language.)
 
 1. Docker（Docker Compose を含む）をインストールする。 \
    [Docker公式サイトのインストール手順書](https://docs.docker.com/engine/install/) を参照して実施する。
+
 1. 本アプリをインストールする。
 
-  ```bash
-  git clone https://github.com/stageleft/nginx_user_admin_ui.git
-  ```
+   ```bash
+   git clone https://github.com/stageleft/nginx_user_admin_ui.git
+   ```
 
 1. 本アプリをカスタマイズする。詳細は後段に記載。
 
 1. 本アプリを実行する。
 
-  ```bash
-  docker compose build && docker compose up -d
-  ```
+   ```bash
+   docker compose build && docker compose up -d
+   ```
 
-* Docker compose の実行は、以下のとおり停止する。
+5. 本アプリの停止方法は以下の通り。
 
-  ```bash
-  docker compose down
-  ```
+   ```bash
+   docker compose down
+   ```
 
-## 現状サンプル設定での使い方
+## 現状サンプル設定での使い方 How to use without change (Only in Japanese language.)
 
 * `http://<サーバのIPアドレス>/` にて、BASIC認証の対象外となる静的HTMLファイルを表示
   * nginx 標準のデフォルトwebページを表示する。
@@ -87,24 +90,24 @@ WTFPL License allows you any change of this app.
     * ただし、グループ名・ユーザ名・パスワードが揃っていない場合はPostgreSQLへの反映は失敗する。これらを揃えるように入力すること。
     * 一度入力したグループ名・ユーザ名を変更した場合は、画面とPostgreSQLが不一致となる。「ユーザ一覧読み出し」ボタンをクリックして再一致化すること。
 
-## プラットフォームのカスタマイズ
+## プラットフォームのカスタマイズ How to change password of Postgres (Only in Japanese language.)
 
 セキュリティの都合上、 `compose.yaml` ファイルを編集し、各コンテナのパスワード要素は変更しておく必要がある。
 
 ```yaml
-     environment:
-      - POSTGRES_PASSWORD=mysecretpassword
+environment:
+  - POSTGRES_PASSWORD=mysecretpassword
 ```
 
 なお、上記パスワードは、 PostgreSQL コンテナと通信する全てのコンテナで統一する必要があるため、全ての箇所で変更すること。
 
-## アプリのカスタマイズ（nginxコンテナ設定の変更）
+## アプリのカスタマイズ（nginxコンテナ設定の変更） How to customize NGINX settings(Only in Japanese language.)
 
 NGINX設定ファイル （`nginx/sample.conf` ファイル）を適宜変更することで、Webサーバ一般の設定を、（nginxの機能の範囲内で）自由に設定することができる。\
 ただし、他のコンテナの設定をNGINXに合わせて変更する必要がある。\
 以下は一例。
 
-### HTTPS 対応
+### HTTPS 対応 How to enable HTTPS (Only in Japanese language.)
 
 [HTTPS設定方法](http://nginx.org/en/docs/http/configuring_https_servers.html) に従い、HTTPSサーバとして構築することが可能。
 
@@ -112,7 +115,7 @@ NGINX設定ファイル （`nginx/sample.conf` ファイル）を適宜変更す
 
 ただし、サーバ名および証明書の管理手順を確立する必要が別途発生する。素直に考えると Dockerfile で証明書を取り込む方法が考えられるが、定期的なコンテナリビルドが必要となる。
 
-### ディレクトリの追加・構成変更
+### ディレクトリの追加・構成変更 How to change HTML settings. (Only in Japanese language.)
 
 NGINX設定に location を追加することで、Webサーバ上で公開するディレクトリの構成を変更することができる。
 
