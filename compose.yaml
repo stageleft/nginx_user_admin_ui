@@ -2,6 +2,7 @@ version: '3.9'
 networks:
   localwebnw:
     external: false
+    name: 'localwebnw'
 volumes:
   postgresdb:
   sysadminhtml:
