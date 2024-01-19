@@ -196,9 +196,8 @@
                 const entry1 = JSON.parse(`[${file_info.prikey_entity.data.toString()}]`)  // maybe same as data in Postgresql
                 const entry2 = new Blob([new Uint8Array(entry1)]);
                 const entry3 = JSON.parse(`[${await entry2.text()}]`)                      // same as UI->API sent Uint8Array
-                const entry4 = new Blob([new Uint8Array(entry3)]);
-                const download_blob_txt = await entry4.text();                             // same as original file
-                const downloaded_file_url = window.URL.createObjectURL(new Blob([download_blob_txt]));
+                const entry4 = new Blob([new Uint8Array(entry3)]);                         // same as original file
+                const downloaded_file_url = window.URL.createObjectURL(entry4);
                 let temp_a_tag = document.createElement('a');
                 temp_a_tag.href = downloaded_file_url;
                 temp_a_tag.download = download_filename;
