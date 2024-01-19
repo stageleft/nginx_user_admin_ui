@@ -53,6 +53,20 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=mysecretpassword
     restart: always
+  certadmin:
+    build: ./certadmin/.
+    container_name: 'certadmin'
+    networks:
+      - localwebnw
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - POSTGRES_SERVER=dbserver
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=settings_nginx
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+    restart: always
   sysadmin:
     build: ./sysadmin/.
     container_name: 'sysadmin'

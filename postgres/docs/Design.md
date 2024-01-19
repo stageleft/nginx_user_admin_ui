@@ -116,9 +116,14 @@ settings_nginx=# \d certfiles
                        Table "public.certfiles"
    Column    |          Type          | Collation | Nullable | Default 
 -------------+------------------------+-----------+----------+---------
+file_id
+key_id
+root_id
  file_name   | character varying(128) |           | not null | 
  data_type   | character varying(32)  |           |          | 
  input_file  | character varying(128) |           |          | 
+prikey_entity | bytea                  |           |          | 
+pubkey_entity | bytea                  |           |          | 
  cert_entity | bytea                  |           |          | 
  comment     | text                   |           |          | 
 Indexes:
@@ -135,33 +140,41 @@ settings_nginx=# \q
 上記、テーブル設計 `\d certfiles` について以下の通り。
 
 * certfiles 一覧
-  * file_name （主キー）鍵または公開鍵証明書のファイル名。
-  * data_type 鍵または公開鍵証明書のタイプ。\
-    下記７種類を想定するが、下記はデータベースとしては保証しない。
-    * `prikey`（CA署名証明書・自己署名証明書に共通）秘密鍵 private key。\
-      `openssl genrsa 2048 > prikey.key` または `openssl ecparam -out prikey.key -name prime256v1 -genkey` のコマンドで作成する。後者のほうが暗号化が強いとのこと。
-    * `pubkey`（CA署名証明書・自己署名証明書に共通）公開鍵 public key。証明書署名要求 certificate signing request ともいう。\
-      上記 `prikey.key` を用いて、 `openssl req -new -sha256 -key prikey.key -out pubkey.csr` のコマンドで作成する。
-    * `cacert`（CA署名証明書のみ）CA署名証明書。
-      上記 `pubkey.csr` をCA認証局（の運営会社）に送付して購入する。
-    * `root_prikey`（自己署名証明書のみ）自作ルート証明書用の秘密鍵。
-      `openssl genrsa 2048 > root_prikey.key` または `openssl ecparam -out root_prikey.key -name prime256v1 -genkey` のコマンドで作成する。
-    * `root_pubkey`（自己署名証明書のみ）自作ルート証明書用の公開鍵。
-      上記 `root_prikey.key` を用いて、 `openssl req -new -sha256 -key root_prikey.key -out root_pubkey.csr` のコマンドで作成する。
-    * `root_selfca`（自己署名証明書のみ）自作の X.509ルート証明書。
-      上記 `root_prikey.key` および `root_pubkey.csr` を用いて、 `openssl x509 -req -sha256 -days 365 -in root_pubkey.csr -signkey root_prikey.key -out root_selfca.crt` のコマンドで作成する。 -days オプションに指定する日数は要再設計。
-    * `selfcert`（自己署名証明書のみ）自己署名証明書。
-      上記、ルート証明書（`root_prikey.key` および `root_selfca.crt`）と公開鍵 `pubkey.csr` を用いて、 `openssl x509 -req -in pubkey.csr -CA root_selfca.crt -CAkey root_prikey.key -CAcreateserial -out selfcert.crt -days 365 -sha256` のコマンドで作成する。 -days オプションに指定する日数は伸ばしたくない。
-  * input_file （本テーブル、 file_name への外部キー制約）依存するファイルの file_name。\
+  * `file_id` （主キー）
+  * `key_id` （上記 `file_id` への外部キー制約）署名した鍵の `file_id`。\
     依存関係の設計は以下のとおりだが、下記はデータベースとしては保証しない。
-    * date_type が `prikey` または `root_prikey` の場合、自身の file_name を改めて記載する。
-    * date_type が `pubkey` の場合、生成元の `prikey` のファイル名を記載する。
-    * date_type が `root_pubkey` の場合、生成元の `root_prikey` のファイル名を記載する。
-    * date_type が `root_selfca` の場合、生成元の `root_pubkey` のファイル名を記載する。
-    * date_type が `cacert` または `selfcert` の場合、生成元の `pubkey` のファイル名を記載する。\
-      本方式においては、 `selfcert` の親となる `root_selfca` の、外部キー制約による管理は想定しない。
-  * `cert_entity` 証明書あるいはキーファイルの実体。
-  * `comment` ユーザーによるコメント。 datatype `selfcert` の親となる `root_selfca` が気になるのであれば書いておく。他に、なにか補足があれば適宜。
+    * デジタル鍵ペア（date_type が `keypair`）の場合、NULL可能であればNULL、不可能であれば自身の `file_id`。
+    * 公開鍵証明書（date_type が `cacert`,`root_selfca`,`selfcert` のいずれか）の場合、生成に用いた公開鍵の `file_id`。\
+      注意として、秘密鍵の `file_id` ではない（後述の `root_id` 要素で管理するため）。
+  * `root_id` （上記 `file_id` への外部キー制約）署名した証明書の file_id。\
+    * デジタル鍵ペア（date_type が `keypair`）の場合、NULL可能であればNULL、不可能であれば自身の `file_id`。
+    * CA署名証明書（date_type が `cacert`）、または、自作の X.509ルート証明書（`root_selfca` 自己署名証明書のみ）場合、NULL可能であればNULL、不可能であれば自身の `file_id`。
+      * CA署名証明書の場合は、 `comment` 欄に証明書購入元ベンダー（窓口）を記載しておくとよい。
+      * 自作の X.509ルート証明の場合は、 `comment` 欄にその旨を記載しておくとよい。
+    * 自己署名証明書（date_type が `selfcert` のいずれか）の場合、生成に用いた公開鍵証明書の `file_id`。
+  * `file_name` 鍵または公開鍵証明書のファイル名。拡張子はなく、アプリが以下のとおり自動で付与する。
+    * 秘密鍵 `.key`
+    * 公開鍵 `.csr`
+    * 公開鍵証明書 `.crt`
+  * `data_type` デジタル鍵ペアまたは公開鍵証明書のタイプ。\
+    下記４種類を想定する。
+    * `keypair` デジタル鍵ペア
+      * 秘密鍵 private key。\
+        `openssl genrsa 2048 > prikey.key` または `openssl ecparam -out prikey.key -name prime256v1 -genkey` のコマンドで作成する。後者のほうが暗号化が強いとのこと。
+      * 公開鍵 public key。証明書署名要求 certificate signing request ともいう。\
+        上記 `prikey.key` を用いて、 `openssl req -new -sha256 -key prikey.key -out pubkey.csr` のコマンドで作成する。
+    * `cacert`CA署名証明書。\
+      上記 `pubkey.csr` をCA認証局（の運営会社）に送付して購入する。
+    * `root_selfca` 自作の X.509ルート証明書。\
+      上記 `prikey.key` および `pubkey.csr` を用いて、\
+      `openssl x509 -req -sha256 -days 365 -in pubkey.csr -signkey prikey.key -out root_selfca.crt` のコマンドで作成する。 -days オプションに指定する日数は要再設計。
+    * `selfcert` 自己署名証明書。\
+      上記、ルート証明書（`root_selfca.crt` および、この公開鍵証明書を作成した `prikey.key(root_prikey.key という)`）と、別のデジタル鍵ペアの公開鍵 `pubkey.csr` を用いて、\
+      `openssl x509 -req -in pubkey.csr -CA root_selfca.crt -CAkey root_prikey.key -CAcreateserial -out selfcert.crt -days 365 -sha256` のコマンドで作成する。 -days オプションに指定する日数は伸ばしたくない。
+  * `prikey_entity` 秘密鍵ファイルの実体。デジタル鍵ペアでない場合は NULL となる。
+  * `pubkey_entity` 公開鍵ファイルの実体。デジタル鍵ペアでない場合は NULL となる。
+  * `cert_entity` 公開鍵証明書の実体。デジタル鍵ペアの場合は NULL となる。
+  * `comment` コメント。ユーザーによるコメントか、システムによるコメント（上記 `root_id` を参照）かはアプリ次第とする。
 
 上記 input_file の依存関係に関して、証明書の作成手順は、 https://learn.microsoft.com/ja-jp/azure/application-gateway/self-signed-certificates による。
 
