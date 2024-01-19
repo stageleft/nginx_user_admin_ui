@@ -105,33 +105,39 @@ WARNING: psql major version 14, server major version 16.
 Type "help" for help.
 
 settings_nginx=# \d
-           List of relations
- Schema |   Name    | Type  |  Owner   
---------+-----------+-------+----------
- public | certfiles | table | postgres
- public | userfile  | table | postgres
-(2 rows)
+                  List of relations
+ Schema |         Name          |   Type   |  Owner   
+--------+-----------------------+----------+----------
+ public | certfiles             | table    | postgres
+ public | certfiles_file_id_seq | sequence | postgres
+ public | userfile              | table    | postgres
+(3 rows)
 
 settings_nginx=# \d certfiles
-                       Table "public.certfiles"
-   Column    |          Type          | Collation | Nullable | Default 
--------------+------------------------+-----------+----------+---------
-file_id
-key_id
-root_id
- file_name   | character varying(128) |           | not null | 
- data_type   | character varying(32)  |           |          | 
- input_file  | character varying(128) |           |          | 
-prikey_entity | bytea                  |           |          | 
-pubkey_entity | bytea                  |           |          | 
- cert_entity | bytea                  |           |          | 
- comment     | text                   |           |          | 
+                                          Table "public.certfiles"
+    Column     |          Type          | Collation | Nullable |                  Default                   
+---------------+------------------------+-----------+----------+--------------------------------------------
+ file_id       | integer                |           | not null | nextval('certfiles_file_id_seq'::regclass)
+ key_id        | integer                |           |          | 
+ root_id       | integer                |           |          | 
+ file_name     | character varying(128) |           |          | 
+ data_type     | character varying(32)  |           |          | 
+ prikey_entity | bytea                  |           |          | 
+ pubkey_entity | bytea                  |           |          | 
+ cert_entity   | bytea                  |           |          | 
+ comment       | text                   |           |          | 
 Indexes:
-    "certfiles_pkey" PRIMARY KEY, btree (file_name)
+    "certfiles_pkey" PRIMARY KEY, btree (file_id)
+Foreign-key constraints:
+    "certfiles_key_id_fkey" FOREIGN KEY (key_id) REFERENCES certfiles(file_id) ON UPDATE CASCADE ON DELETE CASCADE
+    "certfiles_root_id_fkey" FOREIGN KEY (root_id) REFERENCES certfiles(file_id) ON UPDATE CASCADE ON DELETE CASCADE
+Referenced by:
+    TABLE "certfiles" CONSTRAINT "certfiles_key_id_fkey" FOREIGN KEY (key_id) REFERENCES certfiles(file_id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "certfiles" CONSTRAINT "certfiles_root_id_fkey" FOREIGN KEY (root_id) REFERENCES certfiles(file_id) ON UPDATE CASCADE ON DELETE CASCADE
 
 settings_nginx=# select * from certfiles;
- file_name | data_type | input_file | cert_entity | comment 
------------+-----------+------------+-------------+---------
+ file_id | key_id | root_id | file_name | data_type | prikey_entity | pubkey_entity | cert_entity | comment 
+---------+--------+---------+-----------+-----------+---------------+---------------+-------------+---------
 (0 rows)
 
 settings_nginx=# \q
@@ -143,12 +149,12 @@ settings_nginx=# \q
   * `file_id` （主キー）
   * `key_id` （上記 `file_id` への外部キー制約）署名した鍵の `file_id`。\
     依存関係の設計は以下のとおりだが、下記はデータベースとしては保証しない。
-    * デジタル鍵ペア（date_type が `keypair`）の場合、NULL可能であればNULL、不可能であれば自身の `file_id`。
+    * デジタル鍵ペア（date_type が `keypair`）の場合はNULLとする。
     * 公開鍵証明書（date_type が `cacert`,`root_selfca`,`selfcert` のいずれか）の場合、生成に用いた公開鍵の `file_id`。\
       注意として、秘密鍵の `file_id` ではない（後述の `root_id` 要素で管理するため）。
   * `root_id` （上記 `file_id` への外部キー制約）署名した証明書の file_id。\
-    * デジタル鍵ペア（date_type が `keypair`）の場合、NULL可能であればNULL、不可能であれば自身の `file_id`。
-    * CA署名証明書（date_type が `cacert`）、または、自作の X.509ルート証明書（`root_selfca` 自己署名証明書のみ）場合、NULL可能であればNULL、不可能であれば自身の `file_id`。
+    * デジタル鍵ペア（date_type が `keypair`）の場合、NULLとする。
+    * CA署名証明書（date_type が `cacert`）、または、自作の X.509ルート証明書（`root_selfca` 自己署名証明書のみ）場合、NULLとする。
       * CA署名証明書の場合は、 `comment` 欄に証明書購入元ベンダー（窓口）を記載しておくとよい。
       * 自作の X.509ルート証明の場合は、 `comment` 欄にその旨を記載しておくとよい。
     * 自己署名証明書（date_type が `selfcert` のいずれか）の場合、生成に用いた公開鍵証明書の `file_id`。
@@ -156,8 +162,7 @@ settings_nginx=# \q
     * 秘密鍵 `.key`
     * 公開鍵 `.csr`
     * 公開鍵証明書 `.crt`
-  * `data_type` デジタル鍵ペアまたは公開鍵証明書のタイプ。\
-    下記４種類を想定する。
+  * `data_type` デジタル鍵ペアまたは公開鍵証明書のタイプ。値は下記４種類のいずれかを必ず設定すること。
     * `keypair` デジタル鍵ペア
       * 秘密鍵 private key。\
         `openssl genrsa 2048 > prikey.key` または `openssl ecparam -out prikey.key -name prime256v1 -genkey` のコマンドで作成する。後者のほうが暗号化が強いとのこと。

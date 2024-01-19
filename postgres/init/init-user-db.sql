@@ -14,10 +14,10 @@ INSERT INTO userfile (file, username, password) VALUES ('sysadmin_passwd', 'sysa
 -- Table and sample data for certificate (both CA-signed and self-signed).
 CREATE TABLE certfiles(
     file_id       serial PRIMARY KEY,
-    key_id        integer REFERENCES cacert (file_name) ON DELETE CASCADE ON UPDATE CASCADE,
-    root_id       integer REFERENCES cacert (file_name) ON DELETE CASCADE ON UPDATE CASCADE,
+    key_id        integer REFERENCES certfiles (file_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    root_id       integer REFERENCES certfiles (file_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    data_type     varchar(32) NOT NULL,
     file_name     varchar(128),
-    data_type     varchar(32),
     prikey_entity bytea,
     pubkey_entity bytea,
     cert_entity   bytea,

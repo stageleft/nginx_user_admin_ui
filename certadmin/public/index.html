@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <title>certadmin UI</title>
+        <link href="./node_modules/tabulator-tables/dist/css/tabulator.min.css" rel="stylesheet">
+        <script type="text/javascript" src="./node_modules/tabulator-tables/dist/js/tabulator.min.js"></script>
+    </head>
+    <body>
+        <h1>certadmin UI</h1>
+        <div id="control_menu">
+            <script type="text/javascript">
+                function set_row_yellow(row){
+                    row.getElement().style.backgroundColor="yellow";
+                };
+            </script>
+            <button href="javascript:void(0)" rel="nofollow" onClick="table.replaceData('api/')">鍵および証明書一覧読み出し</button>
+            <button href="javascript:void(0)" rel="nofollow" onClick="table.addRow({'data_type':'keypair'},false).then(set_row_yellow)">末尾に空行追加</button>
+            <button href="javascript:void(0)" rel="nofollow" onClick="table.download('csv','data.csv', {bom:true})">CSVダウンロード</button>
+            <button href="javascript:void(0)" rel="nofollow"
+                onClick="table.setHeaderFilterValue('file_name','');
+                         table.setHeaderFilterValue('data_type','');
+                         table.setHeaderFilterValue('input_file','');
+                         table.setHeaderFilterValue('comment','')">
+                フィルタ初期化
+            </button>
+            <button href="javascript:void(0)" rel="nofollow"
+                onClick="fetch('api/restart', {method: 'POST',
+                                               headers: {'Content-Type': 'application/json'},
+                                               body: JSON.stringify({'container': 'webserver'})})">
+                新証明書適用（Webサーバ再起動）
+            </button>
+        </div>
+        <div id="cert_file_table"></div>
+        <script type="text/javascript">
+            var tabledata = [];
+            var table = new Tabulator("#cert_file_table",{
+                data:tabledata,
+                columns:[
+                    {
+                        title:"ファイルID",
+                        field:"file_id",
+                        headerFilter:false, resizable:true,
+                    },{
+                        title:"生成元鍵ファイルID",
+                        field:"key_id",
+                        headerFilter:false, resizable:true,
+                        editor:"input", cellEdited(cell){cell.getElement().style.backgroundColor="yellow";}
+                    },{
+                        title:"生成元証明書ファイルID",
+                        field:"root_id",
+                        headerFilter:false, resizable:true,
+                        editor:"input", cellEdited(cell){cell.getElement().style.backgroundColor="yellow";}
+                    },{
+                        title:"ファイル名",
+                        field:"file_name",
+                        headerFilter:true, resizable:true,
+                        editor:"input", cellEdited(cell){cell.getElement().style.backgroundColor="yellow";}
+                    },{
+                        title:"ファイル種別", field:"data_type",
+                        headerFilter:true, resizable:true,
+                        headerFilterPlaceholder:"種別",
+                        editor:"list", editorParams:{
+                            values:["keypair", "root_selfca", "cacert", "selfcert"]
+                        }, cellEdited(cell){cell.getElement().style.backgroundColor="yellow";}
+                    },{
+                        title:"秘密鍵登録済み？",
+                        field:"is_prikey_entity",
+                        headerFilter:true, resizable:true,
+                        editor:"input", cellEdited(cell){cell.getElement().style.backgroundColor="yellow";}
+                    },{
+                        title:"公開鍵登録済み？",
+                        field:"is_pubkey_entity",
+                        headerFilter:true, resizable:true,
+                        editor:"input", cellEdited(cell){cell.getElement().style.backgroundColor="yellow";}
+                    },{
+                        title:"証明書登録済み？",
+                        field:"is_cert_entity",
+                        headerFilter:true, resizable:true,
+                        editor:"input", cellEdited(cell){cell.getElement().style.backgroundColor="yellow";}
+                    },{
+                        title:"摘要",
+                        field:"comment",
+                        headerFilter:true, resizable:true,
+                        editor:"input", cellEdited(cell){cell.getElement().style.backgroundColor="yellow";}
+                    },{
+                        title:"更新ボタン",
+                        formatter:"buttonTick", hozAlign:"center", resizable:false,
+                        cellClick(e, cell){updateData(cell.getRow());}
+                    },{
+                        title:"削除ボタン",
+                        formatter:"buttonCross", hozAlign:"center", resizable:false,
+                        cellClick(e, cell){deleteData(cell.getRow());}
+                    }
+                ]
+            });
+            // POST メソッド see. https://developer.mozilla.org/ja/docs/Web/API/Fetch_API/Using_Fetch
+            async function updateData(row) {
+                const data = row.getData();
+                const resp_put = await fetch('api/', {
+                    method: "PUT",
+                    cache: "no-cache",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(data),
+                });
+                if (!resp_put.ok) {
+                    await fetch('api/', {
+                        method: "POST",
+                        cache: "no-cache",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(data),
+                    });
+                }
+                // reload newest table.
+                table.replaceData('api/');
+                return null;
+            }
+            async function deleteData(row) {
+                const data = row.getData();
+                await fetch('api/', {
+                    method: "DELETE",
+                    cache: "no-cache",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(data),
+                });
+                row.delete();
+                // reload newest table.
+                table.replaceData('api/');
+                return null;
+            }
+        </script>
+    </body>
+</html>

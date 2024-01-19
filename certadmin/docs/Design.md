@@ -170,6 +170,7 @@
 
     ```json
     {
+      "file_id": "ファイルのID",
       "key_id": "ファイルのID",
       "root_id": "ファイルのID",
       "file_name": "ファイル名",
@@ -186,7 +187,7 @@
 
     ```json
     {
-      "key_id": "ファイルのID"
+      "file_id": "ファイルのID"
     }
     ```
 
