@@ -66,6 +66,15 @@ services:
       - POSTGRES_DB=settings_nginx
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=mysecretpassword
+      - CSRINFO_COUNTRY=JP
+      - CSRINFO_STATE=Tokyo
+      - CSRINFO_CITY=
+      - CSRINFO_ORG=MyCompany
+      - CSRINFO_DIV=
+      - CSRINFO_CN=
+      - CSRINFO_MAIL=
+      - CSRINFO_CHALLENGE=
+      - CSRINFO_OPT_ORG=
     restart: always
   sysadmin:
     build: ./sysadmin/.

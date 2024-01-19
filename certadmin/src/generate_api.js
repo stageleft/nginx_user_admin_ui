@@ -71,28 +71,22 @@ const generate_keypair_api = async function (req, res) {
         // step 3: create and regist private and public key
         // see. https://qiita.com/Vit-Symty/items/5be5326c9db9de755184
         const basename = (await execSync(`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1`)).toString().trim(); 
-        console.log(basename);
         const generate_prikey_command = `openssl ecparam -out /tmp/${basename}.key -name prime256v1 -genkey`;
-        console.log(generate_prikey_command);
         await execSync(generate_prikey_command);
         const generate_pubkey_command = `openssl req -new -sha256 -key /tmp/${basename}.key -out /tmp/${basename}.csr`;
-        const country_code='JP';
-        const state='Tokyo';
-        const city='';
-        const company='MyCompany';
-        const section='';
-        const common_name='';
-        const email='';
-        const challenge='';
-        const company_opt='';
+        const country_code=process.env.CSRINFO_COUNTRY || 'JP';
+        const state=process.env.CSRINFO_STATE || 'Tokyo';
+        const city=process.env.CSRINFO_CITY || '';
+        const company=process.env.CSRINFO_ORG || '';
+        const section=process.env.CSRINFO_DIV || '';
+        const common_name=process.env.CSRINFO_CN || '';
+        const email=process.env.CSRINFO_MAIL || '';
+        const challenge=process.env.CSRINFO_CHALLENGE || '';
+        const company_opt=process.env.CSRINFO_OPT_ORG || '';
         const generate_pubkey_stdin = `${country_code}\n${state}\n${city}\n${company}\n${section}\n${common_name}\n${email}\n${challenge}\n${company_opt}\n`;
-        console.log(generate_pubkey_command);
-        console.log(generate_pubkey_stdin);
         await execSync(generate_pubkey_command, {input: generate_pubkey_stdin});
         const prikey=readFileSync(`/tmp/${basename}.key`);
         const pubkey=readFileSync(`/tmp/${basename}.csr`);
-        console.log(prikey.toString());
-        console.log(pubkey.toString());
 
         const query_string2 = `UPDATE certfiles SET prikey_entity = '${prikey}', pubkey_entity = '${pubkey}' WHERE file_id = '${req.body.file_id}';`;
         await client.query(query_string2);

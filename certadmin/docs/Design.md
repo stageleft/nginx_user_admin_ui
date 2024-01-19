@@ -14,6 +14,17 @@
   * 外部との通信は直接行わない（nginxコンテナを通す）。
 * 環境変数については以下の通り。
   * `POSTGRES_` 系の環境変数については、通信先SQLサーバである `dbserver` コンテナの設定に従う。
+  * `CSRINFO_` 系の環境変数として、以下９つの環境変数を定義し、証明書署名要求 certificate signing request に用いる。
+    * 国名 Country Name (2 letter code) [AU]
+    * 都道府県名 State or Province Name (full name) [Some-State]: ※直訳は「州」。都道府県の直訳 (prefecture) とは合わないが、近い概念がこれしかない。
+    * 市名 Locality Name (eg, city) []:
+    * 組織（企業）名 Organization Name (eg, company) [Internet Widgits Pty Ltd]
+    * 組織内部門名 Organizational Unit Name (eg, section) []:
+    * 名称 Common Name (e.g. server FQDN or YOUR name) []:
+    * 電子メールアドレス Email Address []:
+    * パスワード A challenge password []:
+    * 関連会社名？ An optional company name []:
+
 * コンテナ終了時、即座に再起動する設定を入れておく。
 
 上記を実現した設定が以下の通りとなる。
@@ -32,6 +43,15 @@
       - POSTGRES_DB=【dbserverの設定による】
       - POSTGRES_USER=【dbserverの設定による】
       - POSTGRES_PASSWORD=【dbserverの設定による】
+      - CSRINFO_COUNTRY=JP
+      - CSRINFO_STATE=Tokyo
+      - CSRINFO_CITY=
+      - CSRINFO_ORG=
+      - CSRINFO_DIV=
+      - CSRINFO_CN=
+      - CSRINFO_MAIL=
+      - CSRINFO_CHALLENGE=
+      - CSRINFO_OPT_ORG=
     restart: always
 ```
 
@@ -217,3 +237,30 @@
     ```
 
   * (res) 応答データなし。
+
+## 調査
+
+証明書署名要求 certificate signing request を手作業で作る場合、以下のとおり９つのパラメータを要求される。
+
+```bash
+$ openssl req -new -sha256 -key prikey.key -out pubkey.csr
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:JP
+State or Province Name (full name) [Some-State]:Tokyo
+Locality Name (eg, city) []:
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:MyCompany
+Organizational Unit Name (eg, section) []:
+Common Name (e.g. server FQDN or YOUR name) []:
+Email Address []:
+
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:
+An optional company name []:
+```
