@@ -97,23 +97,13 @@
                         formatter:prikey_upload_init,
                         cellClick(e, cell) {
                             const download_flag = cell.getValue();
+                            const file_id = cell.getRow().getCell('file_id').getValue();
                             if (download_flag === true) {
-                                const file_id = cell.getRow().getCell('file_id').getValue();
                                 download_prikey_entity(file_id);
+                            } else {
+                                generate_prikey_entity(file_id);
                             }
                         }
-                        // cellMouseOver(e, cell){
-                        //     cell.getElement().style.backgroundColor="blue";
-                        //     cell.getElement().addEventListener("drop", ondrop_event);
-                        //     console.log(e);
-                        //     console.log(cell.getElement());
-                        // },
-                        // cellMouseOut(e, cell){
-                        //     cell.getElement().style.backgroundColor=cell.getRow().getCell('file_id').getElement().style.backgroundColor;
-                        // },
-                        // cellMouseUp(e,cell){
-                        //     console.log(e);
-                        // }
                     },{
                         title:"公開鍵登録済み？",
                         field:"is_pubkey_entity",
@@ -181,6 +171,22 @@
                 table.replaceData('api/');
                 return null;
             }
+            async function generate_prikey_entity(file_id) {
+                //
+                const data={"file_id":`${file_id}`} // Uint8Array -> String -> JSON
+                // upload file by method post
+                await fetch('api/generate_keypair', {
+                        method: "POST",
+                        cache: "no-cache",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(data),
+                    });
+                // reload newest table.
+                table.replaceData('api/');
+                return null;
+            }
             async function download_prikey_entity(file_id) {
                 // download file by method post
                 const result = await fetch(`api/primarykey?file_id=${file_id}`, {
@@ -193,11 +199,11 @@
                 const file_info = await result.json();
                 // downloaded file. see https://developer.mozilla.org/ja/docs/Web/API/URL/createObjectURL_static
                 const download_filename = `${file_info.file_name}.key`
-                const entry1 = JSON.parse(`[${file_info.prikey_entity.data.toString()}]`)  // maybe same as data in Postgresql
-                const entry2 = new Blob([new Uint8Array(entry1)]);
-                const entry3 = JSON.parse(`[${await entry2.text()}]`)                      // same as UI->API sent Uint8Array
-                const entry4 = new Blob([new Uint8Array(entry3)]);                         // same as original file
-                const downloaded_file_url = window.URL.createObjectURL(entry4);
+                const entity1 = file_info.prikey_entity.data.toString();
+                const entity2 = JSON.parse(`[${entity1}]`)
+                const entity3 = new Uint8Array(entity2);
+                const download_file_entity = new Blob([entity3]);
+                const downloaded_file_url = window.URL.createObjectURL(download_file_entity);
                 let temp_a_tag = document.createElement('a');
                 temp_a_tag.href = downloaded_file_url;
                 temp_a_tag.download = download_filename;

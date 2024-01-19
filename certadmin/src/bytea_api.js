@@ -23,19 +23,19 @@ const get_prikey_api = async function (req, res) {
             const query_string = `SELECT file_name, prikey_entity FROM certfiles WHERE file_id = ${req.query.file_id};`;
             const reply_object = await client.query(query_string);
             if (reply_object.rowCount === 1) {
+                console.log(reply_object.rows[0])
                 res.status(200).send(reply_object.rows[0]);
             } else {
                 res.status(400).send({"message": `failed to get file from file_id=${req.query.file_id}.`});
             }
 
         }
-    console.log(`GET end.`);
+        console.log(`GET end.`);
     } catch (e) {
-        console.log(e);
         res.status(500).send({error: `GET API failed.`});
 
-        console.log(`API failed. detail : ${e}.\nwebadmin server restarting...`);
-        process.exit(1); // force restart by docker
+        console.log(`GET API failed.`);
+        console.log(e);
     } finally {
         client.end();
     }
@@ -52,7 +52,14 @@ const post_prikey_api = async function (req, res) {
             console.log('req.body.file_id is not string or number.');
             res.status(400).send('req.body.file_id is not string or number.');
         } else {
-            const query_string = `UPDATE certfiles SET prikey_entity = '${req.body.prikey_entity}' WHERE file_id = '${req.body.file_id}';`;
+            // decode Uint8Array -> Binary
+            const entity1 = req.body.prikey_entity.toString();
+            const entity2 = JSON.parse(`[${entity1}]`);
+            const entity3 = new Uint8Array(entity2);
+            const prikey_blob = new Blob([entity3]);
+            const prikey_entity = Buffer.from(await prikey_blob.arrayBuffer());
+            // query
+            const query_string = `UPDATE certfiles SET prikey_entity = '${prikey_entity}' WHERE file_id = '${req.body.file_id}';`;
             await client.query(query_string);
 
             res.status(200).send();
@@ -61,7 +68,7 @@ const post_prikey_api = async function (req, res) {
     } catch (e) {
         res.status(500).send({error: `POST API failed.`});
 
-        console.log(`POST API failed. detail : ${e}.\nwebadmin server restarting...`);
+        console.log(`POST API failed.`);
         console.log(e);
     } finally {
         client.end();
