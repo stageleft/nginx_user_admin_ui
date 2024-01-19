@@ -94,7 +94,14 @@
                         field:"is_prikey_entity",
                         headerFilter:true, resizable:true,
                         // custom formatter. see https://tabulator.info/docs/5.5/format#format-custom
-                        formatter:prikey_upload_init
+                        formatter:prikey_upload_init,
+                        cellClick(e, cell) {
+                            const download_flag = cell.getValue();
+                            if (download_flag === true) {
+                                const file_id = cell.getRow().getCell('file_id').getValue();
+                                download_prikey_entity(file_id);
+                            }
+                        }
                         // cellMouseOver(e, cell){
                         //     cell.getElement().style.backgroundColor="blue";
                         //     cell.getElement().addEventListener("drop", ondrop_event);
@@ -160,7 +167,7 @@
             }
             async function upload_prikey_entity(file_id, file_data) {
                 //
-                const data={"file_id":`${file_id}`, "prikey_entity":`${file_data}`}
+                const data={"file_id":`${file_id}`, "prikey_entity":`${file_data}`} // Uint8Array -> String -> JSON
                 // upload file by method post
                 await fetch('api/primarykey', {
                         method: "POST",
@@ -174,16 +181,31 @@
                 table.replaceData('api/');
                 return null;
             }
-            async function download_prikey_entity(cell) {
-                //
+            async function download_prikey_entity(file_id) {
                 // download file by method post
-                await fetch(`api/primarykey?file_id=${file_id}`, {
+                const result = await fetch(`api/primarykey?file_id=${file_id}`, {
                         method: "GET",
                         cache: "no-cache",
                         headers: {
                             "Content-Type": "application/json",
                         }
                     });
+                const file_info = await result.json();
+                // downloaded file. see https://developer.mozilla.org/ja/docs/Web/API/URL/createObjectURL_static
+                const download_filename = `${file_info.file_name}.key`
+                const entry1 = JSON.parse(`[${file_info.prikey_entity.data.toString()}]`)  // maybe same as data in Postgresql
+                const entry2 = new Blob([new Uint8Array(entry1)]);
+                const entry3 = JSON.parse(`[${await entry2.text()}]`)                      // same as UI->API sent Uint8Array
+                const entry4 = new Blob([new Uint8Array(entry3)]);
+                const download_blob_txt = await entry4.text();                             // same as original file
+                const downloaded_file_url = window.URL.createObjectURL(new Blob([download_blob_txt]));
+                let temp_a_tag = document.createElement('a');
+                temp_a_tag.href = downloaded_file_url;
+                temp_a_tag.download = download_filename;
+                document.body.appendChild(temp_a_tag);
+                temp_a_tag.click();
+                document.body.removeChild(temp_a_tag);
+
                 // reload newest table.
                 table.replaceData('api/');
                 return null;
