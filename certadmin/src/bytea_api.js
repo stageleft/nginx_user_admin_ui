@@ -38,34 +38,21 @@ const post_prikey_api = async function (req, res) {
         console.log(req.body);
         client.connect();
 
-        if (typeof req.body.file != 'string'){
-            console.log('req.body.file is not string.');
-            res.status(400).send('POST API parameter is illegal.');
-        } else if (typeof req.body.username != 'string'){
-            console.log('req.body.username is not string.');
-            res.status(400).send('POST API parameter is illegal.');
-        } else if (typeof req.body.password != 'string'){
-            console.log('req.body.password is not string.');
-            res.status(400).send('POST API parameter is illegal.');
+        if (typeof req.body.file_id !== 'string' && typeof req.body.file_id !== 'number'){
+            console.log('req.body.file is not string or number.');
         } else {
-            let query_string;
-            if (typeof req.body.comment == 'string'){
-                query_string = `INSERT INTO userfile (file, username, password, comment) VALUES ('${req.body.file}', '${req.body.username}', '${req.body.password}', '${req.body.comment}');`;
-            } else {
-                query_string = `INSERT INTO userfile (file, username, password) VALUES ('${req.body.file}', '${req.body.username}', '${req.body.password}');`;
-            }
-            const reply_object = await client.query(query_string);
+            const query_string = `UPDATE certfiles SET prikey_entity = '${req.body.prikey_entity}' WHERE file_id = ${req.body.file_id};`;
+            await client.query(query_string);
 
-            console.log(reply_object.rowCount);
-            res.status(200).send(reply_object.rowCount.toString()); // return '0' (fail) or '1' (success)
+            res.status(200).send();
         }
 
         console.log(`POST end.`);
     } catch (e) {
-        console.log(e);
-        res.status(500).send({error: `POST API failed. detail : ${e}`});
+        res.status(500).send({error: `POST API failed.`});
 
         console.log(`POST API failed. detail : ${e}.\nwebadmin server restarting...`);
+        console.log(e);
     } finally {
         client.end();
     }

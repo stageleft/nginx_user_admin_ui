@@ -32,6 +32,33 @@
         </div>
         <div id="cert_file_table"></div>
         <script type="text/javascript">
+            // cell drop and file upload event. see https://developer.mozilla.org/ja/docs/Web/API/HTML_Drag_and_Drop_API
+            const ondragover_event = function(event) {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "copy";
+            };
+            const ondrop_prikey_event = function(event) {
+                console.log("drop event occured");
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "none";
+                const file_id = event.target.id;
+                if (event.dataTransfer.files.length != 1) {
+                    console.log('Error: Many files dropped.');
+                    return null;
+                }
+                const file_entity = event.dataTransfer.files[0];
+                const reader = new FileReader;
+                reader.addEventListener("loadend", (event) => {
+                    upload_prikey_entity(file_id, new Uint8Array(reader.result));
+                });
+                reader.readAsArrayBuffer(file_entity);
+            };
+            const prikey_upload_init = function(cell) {
+                cell.getElement().addEventListener("dragover", ondragover_event);
+                cell.getElement().addEventListener("drop", ondrop_prikey_event);
+                cell.getElement().id = cell.getRow().getCell('file_id').getValue();
+                return cell.getValue();
+            };
             var tabledata = [];
             var table = new Tabulator("#cert_file_table",{
                 data:tabledata,
@@ -66,7 +93,20 @@
                         title:"秘密鍵登録済み？",
                         field:"is_prikey_entity",
                         headerFilter:true, resizable:true,
-                        editor:"input", cellEdited(cell){cell.getElement().style.backgroundColor="yellow";}
+                        // custom formatter. see https://tabulator.info/docs/5.5/format#format-custom
+                        formatter:prikey_upload_init
+                        // cellMouseOver(e, cell){
+                        //     cell.getElement().style.backgroundColor="blue";
+                        //     cell.getElement().addEventListener("drop", ondrop_event);
+                        //     console.log(e);
+                        //     console.log(cell.getElement());
+                        // },
+                        // cellMouseOut(e, cell){
+                        //     cell.getElement().style.backgroundColor=cell.getRow().getCell('file_id').getElement().style.backgroundColor;
+                        // },
+                        // cellMouseUp(e,cell){
+                        //     console.log(e);
+                        // }
                     },{
                         title:"公開鍵登録済み？",
                         field:"is_pubkey_entity",
@@ -114,6 +154,36 @@
                         body: JSON.stringify(data),
                     });
                 }
+                // reload newest table.
+                table.replaceData('api/');
+                return null;
+            }
+            async function upload_prikey_entity(file_id, file_data) {
+                //
+                const data={"file_id":`${file_id}`, "prikey_entity":`${file_data}`}
+                // upload file by method post
+                await fetch('api/primarykey', {
+                        method: "POST",
+                        cache: "no-cache",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(data),
+                    });
+                // reload newest table.
+                table.replaceData('api/');
+                return null;
+            }
+            async function download_prikey_entity(cell) {
+                //
+                // download file by method post
+                await fetch(`api/primarykey?file_id=${file_id}`, {
+                        method: "GET",
+                        cache: "no-cache",
+                        headers: {
+                            "Content-Type": "application/json",
+                        }
+                    });
                 // reload newest table.
                 table.replaceData('api/');
                 return null;
