@@ -177,7 +177,7 @@ const generate_selfcert_api = async function (req, res) {
             console.log(resmsg);
             return;
         }
-        const common_name_selfca = result2.file_name;
+        const common_name_selfca = result4.file_name;
         if (common_name_selfca === null) {
             const resmsg=`failed to start self-cert generation. common name of self root ca is uncertain.`;
             res.status(400).send({"message": resmsg});
