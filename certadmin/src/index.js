@@ -33,6 +33,9 @@ app.post('/api/generate_keypair', (req, res) => generate_keypair_api(req, res));
 const { generate_selfca_api } = require('./generate_selfca_api');
 app.post('/api/generate_selfca', (req, res) => generate_selfca_api(req, res));
 
+const { generate_selfcert_api } = require('./generate_selfcert_api');
+app.post('/api/generate_selfcert', (req, res) => generate_selfcert_api(req, res));
+
 // container restart api
 const { restart_api } = require('./restart_api');
 app.post('/api/restart', (req, res) => restart_api(req, res));

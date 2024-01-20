@@ -58,7 +58,7 @@ const generate_selfca_api = async function (req, res) {
             return;
         }
         if (result1.cert_entity !== null) {
-            const resmsg=`failed to start key generation. cert exists.`;
+            const resmsg=`failed to start ca generation. cert exists.`;
             res.status(400).send({"message": resmsg});
             console.log(resmsg);
             return;
@@ -75,7 +75,7 @@ const generate_selfca_api = async function (req, res) {
         }
         const result2 = reply_object2.rows[0];
         if (result2.data_type !== 'keypair') {
-            const resmsg=`failed to start ca generation. data_type=${result1.data_type} is not parent keypair.`
+            const resmsg=`failed to start ca generation. data_type=${result2.data_type} is not parent keypair.`
             res.status(400).send({"message": resmsg});
             console.log(resmsg);
             return;
@@ -93,13 +93,13 @@ const generate_selfca_api = async function (req, res) {
             return;
         }
         if (result2.prikey_entity === null) {
-            const resmsg=`failed to start key generation. parent not have prikey_entity.`;
+            const resmsg=`failed to start ca generation. parent not have prikey_entity.`;
             res.status(400).send({"message": resmsg});
             console.log(resmsg);
             return;
         }
         if (result2.pubkey_entity === null) {
-            const resmsg=`failed to start key generation. parent not have pubkey_entity.`;
+            const resmsg=`failed to start ca generation. parent not have pubkey_entity.`;
             res.status(400).send({"message": resmsg});
             console.log(resmsg);
             return;

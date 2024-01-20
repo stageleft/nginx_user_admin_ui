@@ -14,17 +14,19 @@
   * 外部との通信は直接行わない（nginxコンテナを通す）。
 * 環境変数については以下の通り。
   * `POSTGRES_` 系の環境変数については、通信先SQLサーバである `dbserver` コンテナの設定に従う。
-  * `CSRINFO_` 系の環境変数として、以下９つの環境変数を定義し、証明書署名要求 certificate signing request に用いる。
+  * `CSRINFO_` 系の環境変数として、以下８つの環境変数を定義し、証明書署名要求 certificate signing request に用いる。
     * 国名 Country Name (2 letter code) [AU]
     * 都道府県名 State or Province Name (full name) [Some-State]: ※直訳は「州」。都道府県の直訳 (prefecture) とは合わないが、近い概念がこれしかない。
     * 市名 Locality Name (eg, city) []:
     * 組織（企業）名 Organization Name (eg, company) [Internet Widgits Pty Ltd]
     * 組織内部門名 Organizational Unit Name (eg, section) []:
-    * 名称 Common Name (e.g. server FQDN or YOUR name) []:
     * 電子メールアドレス Email Address []:
     * パスワード A challenge password []:
     * 関連会社名？ An optional company name []:
+    * （補足）名称 Common Name (e.g. server FQDN or YOUR name) []: は含まない。
   * `SELFROOTCA_` 系の環境変数として、以下１つの環境変数を定義し、 ルートCA証明書 root CA certificate の作成に用いる。
+    * 証明書の期日
+  * `SELFCERT_` 系の環境変数として、以下１つの環境変数を定義し、 自己署名証明書 self-signed certificate の作成に用いる。
     * 証明書の期日
 
 * コンテナ終了時、即座に再起動する設定を入れておく。
@@ -50,11 +52,11 @@
       - CSRINFO_CITY=
       - CSRINFO_ORG=
       - CSRINFO_DIV=
-      - CSRINFO_CN=
       - CSRINFO_MAIL=
       - CSRINFO_CHALLENGE=
       - CSRINFO_OPT_ORG=
       - SELFROOTCA_DAYS=400
+      - SELFCERT_DAYS=220
     restart: always
 ```
 
@@ -187,7 +189,12 @@
   * (res) 応答データなし。
 
 * POST /api/generate_keypair \
-  デジタル鍵ペア（秘密鍵と公開鍵のペア）を生成する。データ種別が `keypair` かつ、デジタル鍵ペアが両方とも未登録の場合に限る。
+  デジタル鍵ペア（秘密鍵と公開鍵のペア）を生成する。
+  * 実行条件は、指定した `file_id` のレコードについて、以下の通り。
+    * データ種別が `keypair` であること。
+    * 関連する、デジタル鍵ペア `key_id` 、証明書 `root_id` ともに存在しないこと。
+    * ファイル名 `file_name` が登録されていること。本アプリは、ファイル名を FQDN として扱い、公開鍵のCommon Nameに指定する。
+    * 秘密鍵、公開鍵、ともに未登録であること。
   * (req) 下記の JSON を Body とする。
 
     ```json
@@ -201,10 +208,12 @@
 * POST /api/generate_selfca \
   デジタル鍵ペアをもとに、ルート証明書を生成する。
   * 実行条件は、指定した `file_id` および関連項目について、以下の通り。
-    * `file_id` に指定したテーブルのデータ種別が `root_selfca` であること。
-    * 証明書が未登録であること。
-    * `key_id` が登録されていること。 `key_id` に指定したデジタル鍵ペアについて以下のとおりであること。
+    * `file_id` に指定したレコードのデータ種別が `root_selfca` であること。
+    * `file_id` に指定したレコードに、`key_id` が登録されていること。 `key_id` に指定したレコードについて、以下のとおりであること。
+      * デジタル鍵ペアである、すなわち、データ種別が `keypair` であること。
       * 秘密鍵、公開鍵、ともに登録されていること。
+    * `file_id` に指定したレコードに、`root_id` が登録されていないこと。
+    * `file_id` に指定したレコードに、証明書が未登録であること。
   * (req) 下記の JSON を Body とする。
 
     ```json
@@ -215,6 +224,31 @@
 
   * (res) 応答データなし。
 
+* POST /api/generate_selfcert \
+  デジタル鍵ペアおよびルート証明書をもとに、自己署名証明書生成する。
+  * 実行条件は、指定した `file_id` および関連項目について、以下の通り。
+    * `file_id` に指定したレコードのデータ種別が `selfcert` であること。（※ `cacert` は認めない）
+    * `key_id` が登録されていること。 `key_id` に指定したレコードについて、以下のとおりであること。
+      * デジタル鍵ペアである、すなわち、データ種別が `keypair` であること。
+      * 公開鍵が登録されていること。
+      * ファイル名が登録されていること。（証明書署名要求のCommon Nameに設定されていることを期待する）
+    * `root_id` が登録されていること。 `root_id` に指定したレコードについて、以下のとおりであること。
+      * ルート証明書である、すなわち、データ種別が `root_selfca` であること。
+      * ルート証明書を生成したデジタル鍵ペアを、 `key_id` から辿れること。 `key_id` に指定したレコードについて、以下のとおりであること。
+        * デジタル鍵ペアである、すなわち、データ種別が `keypair` であること。
+        * 秘密鍵が登録されていること。
+        * ファイル名が登録されており、公開鍵のものと異なること。（証明書署名要求のCommon Nameに設定されていることを期待する）
+      * ルート証明書が登録されていること。
+    * 証明書が未登録であること。
+  * (req) 下記の JSON を Body とする。
+
+    ```json
+    {
+      "file_id": "ファイルのID",
+    }
+    ```    
+
+  * (res) 応答データなし。
 
 * PUT /api/ \
   既存の証明書の管理パラメータ各種を更新する。デジタル鍵および公開鍵証明書の本体は更新できないので、前述の POST API を個別にコールすること。

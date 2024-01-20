@@ -55,6 +55,13 @@ const generate_keypair_api = async function (req, res) {
             console.log(resmsg);
             return;
         }
+        const common_name = result1.file_name;
+        if (typeof common_name !== 'string' || common_name.length < 1) {
+            const resmsg=`failed to start key generation. file_name is illegal.`;
+            res.status(400).send({"message": resmsg});
+            console.log(resmsg);
+            return;
+        }
         if (result1.prikey_entity !== null) {
             const resmsg=`failed to start key generation. private key exists.`;
             res.status(400).send({"message": resmsg});
@@ -79,7 +86,6 @@ const generate_keypair_api = async function (req, res) {
         const city=process.env.CSRINFO_CITY || '';
         const company=process.env.CSRINFO_ORG || '';
         const section=process.env.CSRINFO_DIV || '';
-        const common_name=process.env.CSRINFO_CN || '';
         const email=process.env.CSRINFO_MAIL || '';
         const challenge=process.env.CSRINFO_CHALLENGE || '';
         const company_opt=process.env.CSRINFO_OPT_ORG || '';

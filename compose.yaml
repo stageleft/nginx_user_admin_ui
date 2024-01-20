@@ -71,11 +71,11 @@ services:
       - CSRINFO_CITY=TokyoCity
       - CSRINFO_ORG=MyCompany
       - CSRINFO_DIV=MyDivision
-      - CSRINFO_CN=localhost
       - CSRINFO_MAIL=email@example.com
       - CSRINFO_CHALLENGE=challengePassword
       - CSRINFO_OPT_ORG=MyExtraDivision
       - SELFROOTCA_DAYS=400
+      - SELFCERT_DAYS=220
     restart: always
   sysadmin:
     build: ./sysadmin/.

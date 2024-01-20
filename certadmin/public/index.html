@@ -119,7 +119,7 @@
                         headerFilter:false, resizable:true,
                         editor:"input", cellEdited(cell){cell.getElement().style.backgroundColor="yellow";}
                     },{
-                        title:"ファイル名",
+                        title:"ファイル名(FQDN)",
                         field:"file_name",
                         headerFilter:true, resizable:true,
                         editor:"input", cellEdited(cell){cell.getElement().style.backgroundColor="yellow";}
@@ -174,7 +174,7 @@
                                 if(data_type === 'root_selfca') {
                                     generate_selfca_entity(file_id);
                                 } else if (data_type === 'selfcert') {
-                                    ;// TODO: create generate_cert_entity() method.
+                                    generate_selfcert_entity(file_id);
                                 }
                                 // else nop.
                             }
@@ -289,6 +289,22 @@
                 const data={"file_id":`${file_id}`} // Uint8Array -> String -> JSON
                 // upload file by method post
                 await fetch('api/generate_selfca', {
+                        method: "POST",
+                        cache: "no-cache",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(data),
+                    });
+                // reload newest table.
+                table.replaceData('api/');
+                return null;
+            }
+            async function generate_selfcert_entity(file_id) {
+                //
+                const data={"file_id":`${file_id}`} // Uint8Array -> String -> JSON
+                // upload file by method post
+                await fetch('api/generate_selfcert', {
                         method: "POST",
                         cache: "no-cache",
                         headers: {
