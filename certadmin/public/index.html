@@ -167,10 +167,16 @@
                         cellClick(e, cell) {
                             const download_flag = cell.getValue();
                             const file_id = cell.getRow().getCell('file_id').getValue();
+                            const data_type = cell.getRow().getCell('data_type').getValue();
                             if (download_flag === true) {
                                 download_cert_entity(file_id);
                             } else {
-                                // TODO: create generate_cert_entity() method.
+                                if(data_type === 'root_selfca') {
+                                    generate_selfca_entity(file_id);
+                                } else if (data_type === 'selfcert') {
+                                    ;// TODO: create generate_cert_entity() method.
+                                }
+                                // else nop.
                             }
                         }
                     },{
@@ -267,6 +273,22 @@
                 const data={"file_id":`${file_id}`} // Uint8Array -> String -> JSON
                 // upload file by method post
                 await fetch('api/generate_keypair', {
+                        method: "POST",
+                        cache: "no-cache",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(data),
+                    });
+                // reload newest table.
+                table.replaceData('api/');
+                return null;
+            }
+            async function generate_selfca_entity(file_id) {
+                //
+                const data={"file_id":`${file_id}`} // Uint8Array -> String -> JSON
+                // upload file by method post
+                await fetch('api/generate_selfca', {
                         method: "POST",
                         cache: "no-cache",
                         headers: {

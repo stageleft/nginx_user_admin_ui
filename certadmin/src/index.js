@@ -26,9 +26,12 @@ app.post('/api/primarykey', (req, res) => post_prikey_api(req, res));
 app.post('/api/publickey', (req, res) => post_pubkey_api(req, res));
 app.post('/api/certfile', (req, res) => post_cert_api(req, res));
 
-// backend generate key api
-const { generate_keypair_api } = require('./generate_api');
+// backend generate key/cert api
+const { generate_keypair_api } = require('./generate_keypair_api');
 app.post('/api/generate_keypair', (req, res) => generate_keypair_api(req, res));
+
+const { generate_selfca_api } = require('./generate_selfca_api');
+app.post('/api/generate_selfca', (req, res) => generate_selfca_api(req, res));
 
 // container restart api
 const { restart_api } = require('./restart_api');

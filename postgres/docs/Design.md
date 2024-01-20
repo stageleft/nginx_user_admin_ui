@@ -170,7 +170,7 @@ settings_nginx=# \q
         上記 `prikey.key` を用いて、 `openssl req -new -sha256 -key prikey.key -out pubkey.csr` のコマンドで作成する。
     * `cacert`CA署名証明書。\
       上記 `pubkey.csr` をCA認証局（の運営会社）に送付して購入する。
-    * `root_selfca` 自作の X.509ルート証明書。\
+    * `root_selfca` 自作の X.509ルートCA証明書 root CA certificate。\
       上記 `prikey.key` および `pubkey.csr` を用いて、\
       `openssl x509 -req -sha256 -days 365 -in pubkey.csr -signkey prikey.key -out root_selfca.crt` のコマンドで作成する。 -days オプションに指定する日数は要再設計。
     * `selfcert` 自己署名証明書。\
