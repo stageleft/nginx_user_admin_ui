@@ -92,7 +92,7 @@ settings_nginx=# \q
     その後、nginxの設定ファイル生成時に、本パラメータで `openssl passwd -6 <password>` することを想定する。
   * comment
 
-### 購入したクライアント証明書の管理
+### クライアント証明書の管理（購入、自己生成ともに同一テーブルで扱う）
 
 データベース `settings_nginx` は上記と共用する。
 
