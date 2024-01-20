@@ -23,12 +23,6 @@
                          table.setHeaderFilterValue('comment','')">
                 フィルタ初期化
             </button>
-            <button href="javascript:void(0)" rel="nofollow"
-                onClick="fetch('api/restart', {method: 'POST',
-                                               headers: {'Content-Type': 'application/json'},
-                                               body: JSON.stringify({'container': 'webserver'})})">
-                新証明書適用（Webサーバ再起動）
-            </button>
         </div>
         <div id="cert_file_table"></div>
         <script type="text/javascript">

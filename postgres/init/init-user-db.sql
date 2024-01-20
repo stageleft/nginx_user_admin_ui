@@ -23,3 +23,7 @@ CREATE TABLE certfiles(
     cert_entity   bytea,
     comment       text
 );
+CREATE TABLE certfiles_deploy_history(
+    file_id       integer PRIMARY KEY REFERENCES certfiles (file_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    deploy_date   timestamp (0) with time zone
+);
