@@ -47,7 +47,7 @@ const get_api = async function (req, res) {
             response_object.push(response_body);
         }
 
-        console.log(response_object);
+        // console.log(response_object);
         res.status(200).send(response_object);
         console.log(`GET completed.`);
     } catch (e) {
