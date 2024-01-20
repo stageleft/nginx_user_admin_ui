@@ -92,6 +92,97 @@ settings_nginx=# \q
     その後、nginxの設定ファイル生成時に、本パラメータで `openssl passwd -6 <password>` することを想定する。
   * comment
 
+### クライアント証明書の管理（購入、自己生成ともに同一テーブルで扱う）
+
+データベース `settings_nginx` は上記と共用する。
+
+```bash
+$ psql -d settings_nginx -U postgres -h 172.17.0.1
+Password for user postgres: 
+psql (14.10 (Ubuntu 14.10-0ubuntu0.22.04.1), server 16.1 (Debian 16.1-1.pgdg120+1))
+WARNING: psql major version 14, server major version 16.
+        Some psql features might not work.
+Type "help" for help.
+
+settings_nginx=# \d
+                  List of relations
+ Schema |         Name          |   Type   |  Owner   
+--------+-----------------------+----------+----------
+ public | certfiles             | table    | postgres
+ public | certfiles_file_id_seq | sequence | postgres
+ public | userfile              | table    | postgres
+(3 rows)
+
+settings_nginx=# \d certfiles
+                                          Table "public.certfiles"
+    Column     |          Type          | Collation | Nullable |                  Default                   
+---------------+------------------------+-----------+----------+--------------------------------------------
+ file_id       | integer                |           | not null | nextval('certfiles_file_id_seq'::regclass)
+ key_id        | integer                |           |          | 
+ root_id       | integer                |           |          | 
+ file_name     | character varying(128) |           |          | 
+ data_type     | character varying(32)  |           |          | 
+ prikey_entity | bytea                  |           |          | 
+ pubkey_entity | bytea                  |           |          | 
+ cert_entity   | bytea                  |           |          | 
+ comment       | text                   |           |          | 
+Indexes:
+    "certfiles_pkey" PRIMARY KEY, btree (file_id)
+Foreign-key constraints:
+    "certfiles_key_id_fkey" FOREIGN KEY (key_id) REFERENCES certfiles(file_id) ON UPDATE CASCADE ON DELETE CASCADE
+    "certfiles_root_id_fkey" FOREIGN KEY (root_id) REFERENCES certfiles(file_id) ON UPDATE CASCADE ON DELETE CASCADE
+Referenced by:
+    TABLE "certfiles" CONSTRAINT "certfiles_key_id_fkey" FOREIGN KEY (key_id) REFERENCES certfiles(file_id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "certfiles" CONSTRAINT "certfiles_root_id_fkey" FOREIGN KEY (root_id) REFERENCES certfiles(file_id) ON UPDATE CASCADE ON DELETE CASCADE
+
+settings_nginx=# select * from certfiles;
+ file_id | key_id | root_id | file_name | data_type | prikey_entity | pubkey_entity | cert_entity | comment 
+---------+--------+---------+-----------+-----------+---------------+---------------+-------------+---------
+(0 rows)
+
+settings_nginx=# \q
+```
+
+上記、テーブル設計 `\d certfiles` について以下の通り。
+
+* certfiles 一覧
+  * `file_id` （主キー）
+  * `key_id` （上記 `file_id` への外部キー制約）署名した鍵の `file_id`。\
+    依存関係の設計は以下のとおりだが、下記はデータベースとしては保証しない。
+    * デジタル鍵ペア（date_type が `keypair`）の場合はNULLとする。
+    * 公開鍵証明書（date_type が `cacert`,`root_selfca`,`selfcert` のいずれか）の場合、生成に用いた公開鍵の `file_id`。\
+      注意として、秘密鍵の `file_id` ではない（後述の `root_id` 要素で管理するため）。
+  * `root_id` （上記 `file_id` への外部キー制約）署名した証明書の file_id。\
+    * デジタル鍵ペア（date_type が `keypair`）の場合、NULLとする。
+    * CA署名証明書（date_type が `cacert`）、または、自作の X.509ルート証明書（`root_selfca` 自己署名証明書のみ）場合、NULLとする。
+      * CA署名証明書の場合は、 `comment` 欄に証明書購入元ベンダー（窓口）を記載しておくとよい。
+      * 自作の X.509ルート証明の場合は、 `comment` 欄にその旨を記載しておくとよい。
+    * 自己署名証明書（date_type が `selfcert` のいずれか）の場合、生成に用いた公開鍵証明書の `file_id`。
+  * `file_name` 鍵または公開鍵証明書のファイル名、FQDNであることが望ましい。拡張子はなく、アプリが以下のとおり自動で付与する。
+    * 秘密鍵 `.key`
+    * 公開鍵 `.csr` ※証明書署名要求の、 Common Name (CN) に `file_name` を設定したい。
+    * 公開鍵証明書 `.crt`
+  * `data_type` デジタル鍵ペアまたは公開鍵証明書のタイプ。値は下記４種類のいずれかを必ず設定すること。
+    * `keypair` デジタル鍵ペア
+      * 秘密鍵 private key。\
+        `openssl genrsa 2048 > prikey.key` または `openssl ecparam -out prikey.key -name prime256v1 -genkey` のコマンドで作成する。後者のほうが暗号化が強いとのこと。
+      * 公開鍵 public key。証明書署名要求 certificate signing request ともいう。\
+        上記 `prikey.key` を用いて、 `openssl req -new -sha256 -key prikey.key -out pubkey.csr` のコマンドで作成する。
+    * `cacert`CA署名証明書。\
+      上記 `pubkey.csr` をCA認証局（の運営会社）に送付して購入する。
+    * `root_selfca` 自作の X.509ルートCA証明書 root CA certificate。\
+      上記 `prikey.key` および `pubkey.csr` を用いて、\
+      `openssl x509 -req -sha256 -days 365 -in pubkey.csr -signkey prikey.key -out root_selfca.crt` のコマンドで作成する。 -days オプションに指定する日数は要再設計。
+    * `selfcert` 自己署名証明書。\
+      上記、ルート証明書（`root_selfca.crt` および、この公開鍵証明書を作成した `prikey.key(root_prikey.key という)`）と、別のデジタル鍵ペアの公開鍵 `pubkey.csr` を用いて、\
+      `openssl x509 -req -in pubkey.csr -CA root_selfca.crt -CAkey root_prikey.key -CAcreateserial -out selfcert.crt -days 365 -sha256` のコマンドで作成する。 -days オプションに指定する日数は伸ばしたくない。
+  * `prikey_entity` 秘密鍵ファイルの実体。デジタル鍵ペアでない場合は NULL となる。
+  * `pubkey_entity` 公開鍵ファイルの実体。デジタル鍵ペアでない場合は NULL となる。
+  * `cert_entity` 公開鍵証明書の実体。デジタル鍵ペアの場合は NULL となる。
+  * `comment` コメント。ユーザーによるコメントか、システムによるコメント（上記 `root_id` を参照）かはアプリ次第とする。
+
+上記 input_file の依存関係に関して、証明書の作成手順は、 https://learn.microsoft.com/ja-jp/azure/application-gateway/self-signed-certificates による。
+
 ## コンテナ機能のカスタマイズ
 
 * Dockerfile : postgres コンテナへ、以下のファイルを適用する。

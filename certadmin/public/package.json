@@ -1,0 +1,14 @@
+{
+  "name": "certadmin",
+  "version": "1.0.0",
+  "description": "Frontend HTML of nginx_user_adin_ui",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "WTFPL",
+  "dependencies": {
+    "tabulator-tables": "^5.5.2"
+  }
+}

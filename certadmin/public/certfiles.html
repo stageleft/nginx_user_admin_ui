@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <title>certadmin UI</title>
+        <link href="./node_modules/tabulator-tables/dist/css/tabulator.min.css" rel="stylesheet">
+        <script type="text/javascript" src="./node_modules/tabulator-tables/dist/js/tabulator.min.js"></script>
+    </head>
+    <body>
+        <h1>certadmin UI</h1>
+        <div id="control_menu">
+            <script type="text/javascript">
+                function set_row_yellow(row){
+                    row.getElement().style.backgroundColor="yellow";
+                };
+            </script>
+            <button href="javascript:void(0)" rel="nofollow" onClick="table.replaceData('api/')">鍵および証明書一覧読み出し</button>
+            <button href="javascript:void(0)" rel="nofollow" onClick="table.addRow({'data_type':'keypair'},false).then(set_row_yellow)">末尾に空行追加</button>
+            <button href="javascript:void(0)" rel="nofollow" onClick="table.download('csv','data.csv', {bom:true})">CSVダウンロード</button>
+            <button href="javascript:void(0)" rel="nofollow"
+                onClick="table.setHeaderFilterValue('file_name','');
+                         table.setHeaderFilterValue('data_type','');
+                         table.setHeaderFilterValue('input_file','');
+                         table.setHeaderFilterValue('comment','')">
+                フィルタ初期化
+            </button>
+            <button href="javascript:void(0)" rel="nofollow"
+                onClick="fetch('api/restart', {method: 'POST',
+                                               headers: {'Content-Type': 'application/json'},
+                                               body: JSON.stringify({'container': 'webserver'})})">
+                新証明書適用（Webサーバ再起動）
+            </button>
+        </div>
+        <div id="cert_file_table"></div>
+        <script type="text/javascript">
+            // cell drop and file upload event. see https://developer.mozilla.org/ja/docs/Web/API/HTML_Drag_and_Drop_API
+            const ondragover_event = function(event) {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "copy";
+            };
+            const ondrop_prikey_event = function(event) {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "none";
+                const file_id = event.target.id;
+                if (event.dataTransfer.files.length != 1) {
+                    console.log('Error: Many files dropped.');
+                    return null;
+                }
+                const file_entity = event.dataTransfer.files[0];
+                const reader = new FileReader;
+                reader.addEventListener("loadend", (event) => {
+                    upload_prikey_entity(file_id, new Uint8Array(reader.result));
+                });
+                reader.readAsArrayBuffer(file_entity);
+            };
+            const ondrop_pubkey_event = function(event) {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "none";
+                const file_id = event.target.id;
+                if (event.dataTransfer.files.length != 1) {
+                    console.log('Error: Many files dropped.');
+                    return null;
+                }
+                const file_entity = event.dataTransfer.files[0];
+                const reader = new FileReader;
+                reader.addEventListener("loadend", (event) => {
+                    upload_pubkey_entity(file_id, new Uint8Array(reader.result));
+                });
+                reader.readAsArrayBuffer(file_entity);
+            };
+            const ondrop_cert_event = function(event) {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "none";
+                const file_id = event.target.id;
+                if (event.dataTransfer.files.length != 1) {
+                    console.log('Error: Many files dropped.');
+                    return null;
+                }
+                const file_entity = event.dataTransfer.files[0];
+                const reader = new FileReader;
+                reader.addEventListener("loadend", (event) => {
+                    upload_cert_entity(file_id, new Uint8Array(reader.result));
+                });
+                reader.readAsArrayBuffer(file_entity);
+            };
+            const prikey_upload_init = function(cell) {
+                cell.getElement().addEventListener("dragover", ondragover_event);
+                cell.getElement().addEventListener("drop", ondrop_prikey_event);
+                cell.getElement().id = cell.getRow().getCell('file_id').getValue();
+                return cell.getValue();
+            };
+            const pubkey_upload_init = function(cell) {
+                cell.getElement().addEventListener("dragover", ondragover_event);
+                cell.getElement().addEventListener("drop", ondrop_pubkey_event);
+                cell.getElement().id = cell.getRow().getCell('file_id').getValue();
+                return cell.getValue();
+            };
+            const cert_upload_init = function(cell) {
+                cell.getElement().addEventListener("dragover", ondragover_event);
+                cell.getElement().addEventListener("drop", ondrop_cert_event);
+                cell.getElement().id = cell.getRow().getCell('file_id').getValue();
+                return cell.getValue();
+            };
+            var tabledata = [];
+            var table = new Tabulator("#cert_file_table",{
+                data:tabledata,
+                columns:[
+                    {
+                        title:"ファイルID",
+                        field:"file_id",
+                        headerFilter:false, resizable:true,
+                    },{
+                        title:"生成元鍵ファイルID",
+                        field:"key_id",
+                        headerFilter:false, resizable:true,
+                        editor:"input", cellEdited(cell){cell.getElement().style.backgroundColor="yellow";}
+                    },{
+                        title:"生成元証明書ファイルID",
+                        field:"root_id",
+                        headerFilter:false, resizable:true,
+                        editor:"input", cellEdited(cell){cell.getElement().style.backgroundColor="yellow";}
+                    },{
+                        title:"ファイル名(FQDN)",
+                        field:"file_name",
+                        headerFilter:true, resizable:true,
+                        editor:"input", cellEdited(cell){cell.getElement().style.backgroundColor="yellow";}
+                    },{
+                        title:"ファイル種別", field:"data_type",
+                        headerFilter:true, resizable:true,
+                        headerFilterPlaceholder:"種別",
+                        editor:"list", editorParams:{
+                            values:["keypair", "root_selfca", "cacert", "selfcert"]
+                        }, cellEdited(cell){cell.getElement().style.backgroundColor="yellow";}
+                    },{
+                        title:"秘密鍵登録済み？",
+                        field:"is_prikey_entity",
+                        headerFilter:true, resizable:true,
+                        // custom formatter. see https://tabulator.info/docs/5.5/format#format-custom
+                        formatter:prikey_upload_init,
+                        cellClick(e, cell) {
+                            const download_flag = cell.getValue();
+                            const file_id = cell.getRow().getCell('file_id').getValue();
+                            if (download_flag === true) {
+                                download_prikey_entity(file_id);
+                            } else {
+                                generate_prikey_entity(file_id);
+                            }
+                        }
+                    },{
+                        title:"公開鍵登録済み？",
+                        field:"is_pubkey_entity",
+                        headerFilter:true, resizable:true,
+                        formatter:pubkey_upload_init,
+                        cellClick(e, cell) {
+                            const download_flag = cell.getValue();
+                            const file_id = cell.getRow().getCell('file_id').getValue();
+                            if (download_flag === true) {
+                                download_pubkey_entity(file_id);
+                            } else {
+                                generate_prikey_entity(file_id); // generate prikey/pubkey pair.
+                            }
+                        }
+                    },{
+                        title:"証明書登録済み？",
+                        field:"is_cert_entity",
+                        headerFilter:true, resizable:true,
+                        formatter:cert_upload_init,
+                        cellClick(e, cell) {
+                            const download_flag = cell.getValue();
+                            const file_id = cell.getRow().getCell('file_id').getValue();
+                            const data_type = cell.getRow().getCell('data_type').getValue();
+                            if (download_flag === true) {
+                                download_cert_entity(file_id);
+                            } else {
+                                if(data_type === 'root_selfca') {
+                                    generate_selfca_entity(file_id);
+                                } else if (data_type === 'selfcert') {
+                                    generate_selfcert_entity(file_id);
+                                }
+                                // else nop.
+                            }
+                        }
+                    },{
+                        title:"摘要",
+                        field:"comment",
+                        headerFilter:true, resizable:true,
+                        editor:"input", cellEdited(cell){cell.getElement().style.backgroundColor="yellow";}
+                    },{
+                        title:"更新ボタン",
+                        formatter:"buttonTick", hozAlign:"center", resizable:false,
+                        cellClick(e, cell){updateData(cell.getRow());}
+                    },{
+                        title:"削除ボタン",
+                        formatter:"buttonCross", hozAlign:"center", resizable:false,
+                        cellClick(e, cell){deleteData(cell.getRow());}
+                    }
+                ]
+            });
+            // POST メソッド see. https://developer.mozilla.org/ja/docs/Web/API/Fetch_API/Using_Fetch
+            async function updateData(row) {
+                const data = row.getData();
+                const resp_put = await fetch('api/', {
+                    method: "PUT",
+                    cache: "no-cache",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(data),
+                });
+                if (!resp_put.ok) {
+                    await fetch('api/', {
+                        method: "POST",
+                        cache: "no-cache",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(data),
+                    });
+                }
+                // reload newest table.
+                table.replaceData('api/');
+                return null;
+            }
+            async function upload_prikey_entity(file_id, file_data) {
+                //
+                const data={"file_id":`${file_id}`, "prikey_entity":`${file_data}`} // Uint8Array -> String -> JSON
+                // upload file by method post
+                await fetch('api/primarykey', {
+                        method: "POST",
+                        cache: "no-cache",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(data),
+                    });
+                // reload newest table.
+                table.replaceData('api/');
+                return null;
+            }
+            async function upload_pubkey_entity(file_id, file_data) {
+                //
+                const data={"file_id":`${file_id}`, "pubkey_entity":`${file_data}`} // Uint8Array -> String -> JSON
+                // upload file by method post
+                await fetch('api/publickey', {
+                        method: "POST",
+                        cache: "no-cache",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(data),
+                    });
+                // reload newest table.
+                table.replaceData('api/');
+                return null;
+            }
+            async function upload_cert_entity(file_id, file_data) {
+                //
+                const data={"file_id":`${file_id}`, "cert_entity":`${file_data}`} // Uint8Array -> String -> JSON
+                // upload file by method post
+                await fetch('api/certfile', {
+                        method: "POST",
+                        cache: "no-cache",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(data),
+                    });
+                // reload newest table.
+                table.replaceData('api/');
+                return null;
+            }
+            async function generate_prikey_entity(file_id) {
+                //
+                const data={"file_id":`${file_id}`} // Uint8Array -> String -> JSON
+                // upload file by method post
+                await fetch('api/generate_keypair', {
+                        method: "POST",
+                        cache: "no-cache",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(data),
+                    });
+                // reload newest table.
+                table.replaceData('api/');
+                return null;
+            }
+            async function generate_selfca_entity(file_id) {
+                //
+                const data={"file_id":`${file_id}`} // Uint8Array -> String -> JSON
+                // upload file by method post
+                await fetch('api/generate_selfca', {
+                        method: "POST",
+                        cache: "no-cache",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(data),
+                    });
+                // reload newest table.
+                table.replaceData('api/');
+                return null;
+            }
+            async function generate_selfcert_entity(file_id) {
+                //
+                const data={"file_id":`${file_id}`} // Uint8Array -> String -> JSON
+                // upload file by method post
+                await fetch('api/generate_selfcert', {
+                        method: "POST",
+                        cache: "no-cache",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(data),
+                    });
+                // reload newest table.
+                table.replaceData('api/');
+                return null;
+            }
+            async function download_file_entity(file_name, file_downloaded_entity) {
+                // downloaded file. see https://developer.mozilla.org/ja/docs/Web/API/URL/createObjectURL_static
+                const entity1 = file_downloaded_entity.data.toString();
+                const entity2 = JSON.parse(`[${entity1}]`)
+                const entity3 = new Uint8Array(entity2);
+                const download_file_entity = new Blob([entity3]);
+                const downloaded_file_url = window.URL.createObjectURL(download_file_entity);
+                let temp_a_tag = document.createElement('a');
+                temp_a_tag.href = downloaded_file_url;
+                temp_a_tag.download = file_name;
+                document.body.appendChild(temp_a_tag);
+                temp_a_tag.click();
+                document.body.removeChild(temp_a_tag);
+                return null;
+            }
+            async function download_prikey_entity(file_id) {
+                // download file by method post
+                const result = await fetch(`api/primarykey?file_id=${file_id}`, {
+                        method: "GET",
+                        cache: "no-cache",
+                        headers: {
+                            "Content-Type": "application/json",
+                        }
+                    });
+                const file_info = await result.json();
+                await download_file_entity(`${file_info.file_name}.key`, file_info.prikey_entity);
+
+                // reload newest table.
+                table.replaceData('api/');
+                return null;
+            }
+            async function download_pubkey_entity(file_id) {
+                // download file by method post
+                const result = await fetch(`api/publickey?file_id=${file_id}`, {
+                        method: "GET",
+                        cache: "no-cache",
+                        headers: {
+                            "Content-Type": "application/json",
+                        }
+                    });
+                const file_info = await result.json();
+                await download_file_entity(`${file_info.file_name}.csr`, file_info.pubkey_entity);
+
+                // reload newest table.
+                table.replaceData('api/');
+                return null;
+            }
+            async function download_cert_entity(file_id) {
+                // download file by method post
+                const result = await fetch(`api/certfile?file_id=${file_id}`, {
+                        method: "GET",
+                        cache: "no-cache",
+                        headers: {
+                            "Content-Type": "application/json",
+                        }
+                    });
+                const file_info = await result.json();
+                await download_file_entity(`${file_info.file_name}.crt`, file_info.cert_entity);
+
+                // reload newest table.
+                table.replaceData('api/');
+                return null;
+            }
+            async function deleteData(row) {
+                const data = row.getData();
+                await fetch('api/', {
+                    method: "DELETE",
+                    cache: "no-cache",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(data),
+                });
+                row.delete();
+                // reload newest table.
+                table.replaceData('api/');
+                return null;
+            }
+        </script>
+    </body>
+</html>

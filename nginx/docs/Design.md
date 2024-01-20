@@ -6,8 +6,8 @@
 
 * ビルド、コンテナ名についてはディレクトリ構成を参照。
 * コンテナ外との通信について、考え方は全体設計を参照。
-  * `dbserver` および `webadmin` に対しては、Docker内ネットワーク `localwebnw` を設定する。
-  * `sysadmin` に対しては、Docker共有ボリューム `sysadminhtml` を設定する。ボリュームのマウント先については、 `sample.conf` に一致化させる。
+  * `dbserver` および 各種アプリ（ `webadmin` 等）に対しては、Docker内ネットワーク `localwebnw` を設定する。
+  * 静的Webページ（`sysadmin` 等）に対しては、Docker共有ボリューム `sysadminhtml` を設定する。ボリュームのマウント先については、 `sample.conf` に一致化させる。
   * 外部との通信については、HTTPを用いて行う。このため 80 ポートを公開する。
 * 環境変数については以下の通り。
   * `POSTGRES_` 系の環境変数については、通信先SQLサーバである `dbserver` コンテナの設定に従う。
@@ -47,6 +47,8 @@
 * Dockerfile : nginx コンテナへ各種ファイルを適用する。
 * sample.conf : nginx への設定。 `/etc/nginx/conf.d/default.conf` への差し替えとして機能する。
 * default.conf.org : 上記 default.conf そのもの。参照用。 ※nginx公式から提供された設定ファイルなので、WTFPLライセンス対象外につき注意。
+* index.html : nginx への設定。 `/usr/share/nginx/html/index.html` への差し替えとして機能する。
+* index.html.org : 上記 index.html そのもの。参照用。 ※nginx公式から提供された設定ファイルなので、WTFPLライセンス対象外につき注意。
 * 00_setup_from_postgres.sh : 下記アプリを実行するためのシェルスクリプト。実行結果として出力されたBASIC認証ファイルの確認およびアプリ再実行の機能も合わせ持つ。
   * 以前 `postgres_to_nginx/index.js` を実行した際に生成した認証ファイル `/etc/nginx/conf.d/*.sec` を削除する。
   * `postgres_to_nginx/index.js` を実行し、 `dbserver` に用意されたBASIC認証向けのユーザデータをもとに、BASIC認証ファイルを生成する。\

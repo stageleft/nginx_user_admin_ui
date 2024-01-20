@@ -15,6 +15,9 @@ RUN chmod +x /docker-entrypoint.d/00_setup_from_postgres.sh
 RUN rm /etc/nginx/conf.d/default.conf
 COPY sample.conf /etc/nginx/conf.d/
 
+# Copy index.html to directory
+COPY index.html /usr/share/nginx/html/
+
 # expose HTTP port.
 # Exposeするポートは /etc/nginx/conf.d/*.conf と歩調を合わせること。
 EXPOSE 80

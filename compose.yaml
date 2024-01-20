@@ -2,6 +2,7 @@ version: '3.9'
 networks:
   localwebnw:
     external: false
+    name: 'localwebnw'
 volumes:
   postgresdb:
   sysadminhtml:
@@ -52,9 +53,35 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=mysecretpassword
     restart: always
+  certadmin:
+    build: ./certadmin/.
+    container_name: 'certadmin'
+    networks:
+      - localwebnw
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - POSTGRES_SERVER=dbserver
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=settings_nginx
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+      - CSRINFO_COUNTRY=JP
+      - CSRINFO_STATE=Tokyo
+      - CSRINFO_CITY=TokyoCity
+      - CSRINFO_ORG=MyCompany
+      - CSRINFO_DIV=MyDivision
+      - CSRINFO_MAIL=email@example.com
+      - CSRINFO_CHALLENGE=challengePassword
+      - CSRINFO_OPT_ORG=MyExtraDivision
+      - SELFROOTCA_DAYS=400
+      - SELFCERT_DAYS=220
+    restart: always
   sysadmin:
     build: ./sysadmin/.
     container_name: 'sysadmin'
+    networks:
+      - localwebnw
     volumes:
       - type: volume
         source: sysadminhtml
