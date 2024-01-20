@@ -25,6 +25,7 @@ I want to create local web server with BASIC auth.
   * [Node.js](https://nodejs.org/en)
     * [Express](https://expressjs.com/ja/)
     * [Node-Postgres](https://node-postgres.com/)
+    * [Luxon](https://moment.github.io/luxon/)
   * [Tabulator](https://tabulator.info/)
   * [Debian Linux](https://www.debian.org/)
 
@@ -90,6 +91,8 @@ WTFPL License allows you any change of this app.
     * ただし、グループ名・ユーザ名・パスワードが揃っていない場合はPostgreSQLへの反映は失敗する。これらを揃えるように入力すること。
     * 一度入力したグループ名・ユーザ名を変更した場合は、画面とPostgreSQLが不一致となる。「ユーザ一覧読み出し」ボタンをクリックして再一致化すること。
 * `http://<サーバのIPアドレス>/certadmin/` にて、BASIC認証の対象となるExpress UI/APIサービスを提供。
+  * HTTPSで用いる、デジタル鍵ペアおよび証明書を管理する画面。
+    * デジタル鍵ペア、証明書ともに、自動生成の方法と、ファイルアップロードによる方法の２種類による管理が可能。
 
 ## プラットフォームのカスタマイズ How to change password of Postgres (Only in Japanese language.)
 
