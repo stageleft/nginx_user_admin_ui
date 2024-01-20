@@ -88,7 +88,8 @@ const generate_keypair_api = async function (req, res) {
         const prikey=readFileSync(`/tmp/${basename}.key`);
         const pubkey=readFileSync(`/tmp/${basename}.csr`);
 
-        const query_string2 = `UPDATE certfiles SET prikey_entity = '${prikey}', pubkey_entity = '${pubkey}' WHERE file_id = '${req.body.file_id}';`;
+        const comment =`CSR: C = ${country_code}, ST = ${state}, L = ${city}, O = ${company}, OU = ${section}, CN = ${common_name}, emailAddress = ${email}`;
+        const query_string2 = `UPDATE certfiles SET prikey_entity = '${prikey}', pubkey_entity = '${pubkey}', comment='${comment}' WHERE file_id = '${req.body.file_id}';`;
         await client.query(query_string2);
 
         // step 4: remove private and public key from filesystem

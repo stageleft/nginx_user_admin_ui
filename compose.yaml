@@ -68,13 +68,13 @@ services:
       - POSTGRES_PASSWORD=mysecretpassword
       - CSRINFO_COUNTRY=JP
       - CSRINFO_STATE=Tokyo
-      - CSRINFO_CITY=
+      - CSRINFO_CITY=TokyoCity
       - CSRINFO_ORG=MyCompany
-      - CSRINFO_DIV=
-      - CSRINFO_CN=
-      - CSRINFO_MAIL=
-      - CSRINFO_CHALLENGE=
-      - CSRINFO_OPT_ORG=
+      - CSRINFO_DIV=MyDivision
+      - CSRINFO_CN=localhost
+      - CSRINFO_MAIL=email@example.com
+      - CSRINFO_CHALLENGE=challengePassword
+      - CSRINFO_OPT_ORG=MyExtraDivision
       - SELFROOTCA_DAYS=400
     restart: always
   sysadmin:
