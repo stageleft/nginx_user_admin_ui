@@ -36,6 +36,11 @@ app.post('/api/generate_selfca', (req, res) => generate_selfca_api(req, res));
 const { generate_selfcert_api } = require('./generate_selfcert_api');
 app.post('/api/generate_selfcert', (req, res) => generate_selfcert_api(req, res));
 
+// mark deploy api
+const { get_deploy_history_api, post_deploy_command_api } = require('./deploy_api');
+app.get('/api/deploy_history', (req, res) => get_deploy_history_api(req, res));
+app.post('/api/deploy_history', (req, res) => post_deploy_command_api(req, res));
+
 // container restart api
 const { restart_api } = require('./restart_api');
 app.post('/api/restart', (req, res) => restart_api(req, res));

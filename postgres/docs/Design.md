@@ -183,6 +183,48 @@ settings_nginx=# \q
 
 上記 input_file の依存関係に関して、証明書の作成手順は、 https://learn.microsoft.com/ja-jp/azure/application-gateway/self-signed-certificates による。
 
+### クライアント証明書のデプロイ状況
+
+本テーブルは、上記 `certfiles` とJOINすることで、クライアント証明書（署名CA証明書、または、自己署名証明書）の適用状況を管理することを目的とする。
+
+```bash
+$ docker exec -it dbserver psql -U postgres -d settings_nginx
+psql (16.1 (Debian 16.1-1.pgdg120+1))
+Type "help" for help.
+
+settings_nginx=# \d
+                    List of relations
+ Schema |           Name           |   Type   |  Owner   
+--------+--------------------------+----------+----------
+ public | certfiles                | table    | postgres
+ public | certfiles_deploy_history | table    | postgres
+ public | certfiles_file_id_seq    | sequence | postgres
+ public | userfile                 | table    | postgres
+(4 rows)
+
+settings_nginx=# \d certfiles_deploy_history
+                  Table "public.certfiles_deploy_history"
+   Column    |            Type             | Collation | Nullable | Default 
+-------------+-----------------------------+-----------+----------+---------
+ file_id     | integer                     |           | not null | 
+ deploy_date | timestamp(0) with time zone |           |          | 
+Indexes:
+    "certfiles_deploy_history_pkey" PRIMARY KEY, btree (file_id)
+Foreign-key constraints:
+    "certfiles_deploy_history_file_id_fkey" FOREIGN KEY (file_id) REFERENCES certfiles(file_id) ON UPDATE CASCADE ON DELETE CASCADE
+
+settings_nginx=# select * from certfiles_deploy_history;
+ file_id | deploy_date 
+---------+-------------
+(0 rows)
+
+settings_nginx=# \q
+```
+
+* certfiles_deploy_history 一覧
+  * `file_id` （主キーかつ外部キー）デプロイ対象となる証明書の `file_id`
+  * `deploy_date` 証明書のデプロイを指示した時刻。未指示の場合はNULLとなる。
+
 ## コンテナ機能のカスタマイズ
 
 * Dockerfile : postgres コンテナへ、以下のファイルを適用する。

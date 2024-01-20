@@ -60,7 +60,7 @@
     restart: always
 ```
 
-## 機能一覧
+## 機能一覧（証明書管理）
 
 * GET / \
   証明書設定のホームページを取得する。
@@ -293,6 +293,38 @@
 
   * (res) 応答データなし。
 
+## 機能一覧（証明書デプロイ）
+
+* GET /api/deploy_history \
+  証明書ごとの、証明書名とデプロイ指示時刻の一覧を取得する。
+  * (req) 追加パラメータなし
+  * (res) 下記の JSON データを取得する。ファイル本体は対象外とする。
+
+    ```json
+    [
+      {
+        "file_id": "ファイルのID",
+        "root_id": "ルート証明書のファイルID",
+        "file_name": "ファイル名",
+        "data_type": "ファイル種別",
+        "deploy_date": "デプロイ指示時刻",
+        "comment": "摘要"
+      },{
+        ...
+      }
+    ]
+    ```
+
+* GET /api/deploy_history \
+  対象となる証明書に、デプロイ指示時刻を記録する。（デプロイ指示時刻はAPIが発行する）
+  * (req) 下記の JSON を Body とする。
+
+    ```json
+    {
+      "file_id": "ファイルのID",
+    }
+    ```    
+
 ## 調査
 
 証明書署名要求 certificate signing request を手作業で作る場合、以下のとおり９つのパラメータを要求される。
@@ -318,4 +350,42 @@ Please enter the following 'extra' attributes
 to be sent with your certificate request
 A challenge password []:
 An optional company name []:
+```
+
+自己署名証明書を１個払い出したときのテーブル状況例
+
+```bash
+settings_nginx=# SELECT file_id,file_name,data_type FROM certfiles;
+ file_id |       file_name        |  data_type  
+---------+------------------------+-------------
+       1 | www.elder-alliance.org | keypair
+       2 | localhost              | keypair
+       3 | www.elder-alliance.org | root_selfca
+       4 | localhost              | selfcert
+(4 rows)
+
+settings_nginx=# SELECT * FROM certfiles_deploy_history;
+ file_id | deploy_date 
+---------+-------------
+(0 rows)
+
+settings_nginx=# SELECT certfiles.file_id,file_name,deploy_date FROM certfiles
+LEFT OUTER JOIN certfiles_deploy_history ON certfiles.file_id = certfiles_deploy_history.file_id
+ORDER BY certfiles.file_id ASC;
+ file_id |       file_name        | deploy_date 
+---------+------------------------+-------------
+       1 | www.elder-alliance.org | 
+       2 | localhost              | 
+       3 | www.elder-alliance.org | 
+       4 | localhost              | 
+(4 rows)
+
+settings_nginx=# SELECT certfiles.file_id,file_name,data_type,deploy_date FROM certfiles
+LEFT OUTER JOIN certfiles_deploy_history ON certfiles.file_id = certfiles_deploy_history.file_id
+WHERE certfiles.data_type = 'selfcert' OR certfiles.data_type = 'cacert' 
+ORDER BY certfiles.file_id ASC;
+ file_id | file_name | data_type | deploy_date 
+---------+-----------+-----------+-------------
+       4 | localhost | selfcert  | 
+(1 row)
 ```
