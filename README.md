@@ -93,6 +93,8 @@ WTFPL License allows you any change of this app.
 * `http://<サーバのIPアドレス>/certadmin/` にて、BASIC認証の対象となるExpress UI/APIサービスを提供。
   * HTTPSで用いる、デジタル鍵ペアおよび証明書を管理する画面。
     * デジタル鍵ペア、証明書ともに、自動生成の方法と、ファイルアップロードによる方法の２種類による管理が可能。
+  * HTTPSサーバに指定する証明書を選択する画面。
+    * 自己署名証明書については、同時にブラウザ登録すべきルート証明書のダウンロード機能も付与。
 
 ## プラットフォームのカスタマイズ How to change password of Postgres (Only in Japanese language.)
 
@@ -113,11 +115,23 @@ NGINX設定ファイル （`nginx/sample.conf` ファイル）を適宜変更す
 
 ### HTTPS 対応 How to enable HTTPS (Only in Japanese language.)
 
-[HTTPS設定方法](http://nginx.org/en/docs/http/configuring_https_servers.html) に従い、HTTPSサーバとして構築することが可能。
+* サーバのFQDN（IPアドレス、サーバ名、または、ドメイン名）を決定する。
+* 決定したFQDNを用いて、 certadmin ページから各種の鍵を登録。（上記のとおり、CA署名証明書、自己署名証明書、の２パターンに対応）
+* 決定したFQDNを用いて、 `nginx/sample.conf` ファイルを書き換える。書き換え箇所は下記３箇所。
 
-本アプリを用いて、インターネットからのアクセスを行う際は必須の設定となる。（HTTP通信だと、BASIC認証パスワードが生で流れるため）
+```bash
+    server_name         localhost;
+    ssl_certificate     /etc/nginx/conf.d/localhost.crt;
+    ssl_certificate_key /etc/nginx/conf.d/localhost.key;
+```
 
-ただし、サーバ名および証明書の管理手順を確立する必要が別途発生する。素直に考えると Dockerfile で証明書を取り込む方法が考えられるが、定期的なコンテナリビルドが必要となる。
+* HTTPのポートを閉じる場合、同じく `nginx/sample.conf` ファイルを書き換える。削除箇所は下記２箇所。 \
+  合わせて、 compose.yaml や Dockerfile からも 80 番ポートの公開は削除しておくとよい。
+
+```bash
+    listen              80;
+    listen              [::]:80;
+```
 
 ### ディレクトリの追加・構成変更 How to change HTML settings. (Only in Japanese language.)
 
