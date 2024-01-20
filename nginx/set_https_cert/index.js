@@ -94,10 +94,14 @@ const main = async function() {
         let id_cert_key_pair = await get_cert_file_ids(file_name);
         for (let j in id_cert_key_pair) {
             const cert_entity = await read_cert_entity(id_cert_key_pair[j].file_id);
-            await writeFileSync(`/etc/nginx/conf.d/${file_name}.crt`, cert_entity);
+            if (cert_entity != null) {
+                await writeFileSync(`/etc/nginx/conf.d/${file_name}.crt`, cert_entity);
+            }
 
             const key_entity = await read_prikey_entity(id_cert_key_pair[j].key_id);
-            await writeFileSync(`/etc/nginx/conf.d/${file_name}.key`, key_entity);
+            if (key_entity != null) {
+                await writeFileSync(`/etc/nginx/conf.d/${file_name}.key`, key_entity);
+            }
         }
     }
 }
