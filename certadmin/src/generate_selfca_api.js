@@ -7,6 +7,7 @@ const client_param = {
     user: process.env.POSTGRES_USER,
     password: process.env.POSTGRES_PASSWORD
 };
+const { DateTime } = require('luxon');
 // clild_process packages
 const { execSync } = require('node:child_process');
 const { readFileSync, writeFileSync, unlinkSync } = require('node:fs');
@@ -109,11 +110,14 @@ const generate_selfca_api = async function (req, res) {
         const basename = (await execSync(`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1`)).toString().trim();
         await writeFileSync(`/tmp/${basename}.key`, result2.prikey_entity);
         await writeFileSync(`/tmp/${basename}.csr`, result2.pubkey_entity);
-        const generate_rootca_command = `openssl x509 -req -sha256 -days 365 -in /tmp/${basename}.csr -signkey /tmp/${basename}.key -out /tmp/${basename}.crt`;
+        const root_selfca_expire_days = process.env.SELFROOTCA_DAYS || 400; // default: 1year(366) + 1month(31) + some buffer(3)
+        const generate_rootca_command = `openssl x509 -req -sha256 -days ${root_selfca_expire_days} -in /tmp/${basename}.csr -signkey /tmp/${basename}.key -out /tmp/${basename}.crt`;
         await execSync(generate_rootca_command);
         const selfca=readFileSync(`/tmp/${basename}.crt`);
 
-        const query_string3 = `UPDATE certfiles SET cert_entity = '${selfca}' WHERE file_id = '${req.body.file_id}';`;
+        let expire_date = DateTime.now().plus({ days: root_selfca_expire_days });
+        const comment = `expires ${expire_date.toISODate()}`;
+        const query_string3 = `UPDATE certfiles SET cert_entity = '${selfca}', comment='${comment}' WHERE file_id = '${req.body.file_id}';`;
         await client.query(query_string3);
 
         // step 4: remove private and public key from filesystem

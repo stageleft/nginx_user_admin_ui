@@ -75,6 +75,7 @@ services:
       - CSRINFO_MAIL=
       - CSRINFO_CHALLENGE=
       - CSRINFO_OPT_ORG=
+      - SELFROOTCA_DAYS=400
     restart: always
   sysadmin:
     build: ./sysadmin/.

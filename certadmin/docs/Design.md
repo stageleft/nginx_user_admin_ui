@@ -24,6 +24,8 @@
     * 電子メールアドレス Email Address []:
     * パスワード A challenge password []:
     * 関連会社名？ An optional company name []:
+  * `SELFROOTCA_` 系の環境変数として、以下１つの環境変数を定義し、 ルートCA証明書 root CA certificate の作成に用いる。
+    * 証明書の期日
 
 * コンテナ終了時、即座に再起動する設定を入れておく。
 
@@ -52,6 +54,7 @@
       - CSRINFO_MAIL=
       - CSRINFO_CHALLENGE=
       - CSRINFO_OPT_ORG=
+      - SELFROOTCA_DAYS=400
     restart: always
 ```
 
