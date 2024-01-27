@@ -96,7 +96,7 @@ NGINX設定ファイル （`nginx/sample.conf` ファイル）を適宜変更す
 ### HTTPS 対応 How to enable HTTPS (Only in Japanese language.)
 
 * サーバのFQDN（IPアドレス、サーバ名、または、ドメイン名）を決定する。
-* 決定したFQDNを用いて、 certadmin ページから各種の鍵を登録。（上記のとおり、CA署名証明書、自己署名証明書、の２パターンに対応）
+* 決定したFQDNを用いて、 certadmin ページから各種の鍵を登録。（CA署名証明書、自己署名証明書、の２パターンに対応）
 * 決定したFQDNを用いて、 `nginx/sample.conf` ファイルを書き換える。書き換え箇所は下記３箇所。
 
 ```bash
