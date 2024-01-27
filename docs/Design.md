@@ -7,7 +7,8 @@
 * コンテナ
   * `dbserver` : [PostgreSQL](https://www.postgresql.org/)
   * `webserver` : [nginx](https://www.nginx.com/)
-    * 起動時、Basic認証のユーザ・パスワードファイルをPostgreSQL経由で生成するためのアプリ（自作）を含む。
+    * 起動時、Basic認証のユーザ・パスワードファイルをデータベース経由で生成するための自作アプリを含む。
+    * 起動時、HTTPSで用いる秘密鍵および公開鍵証明書をデータベース経由で取得するための自作アプリを含む。
     * 置き換え用のホームページ（HTMLファイル）を含む。
   * `webadmin` : DBアクセスUI/APIアプリ
     * BASIC認証の設定変更を反映するため `webserver` の再起動を行う機能を含む。
