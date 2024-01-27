@@ -69,8 +69,8 @@ WTFPL License allows you any change of this app.
 
 ## 現状サンプル設定での使い方 How to use without change (Only in Japanese language.)
 
-* `http://<サーバのIPアドレス>/` にて、BASIC認証の対象外となる静的HTMLファイルを表示
-  * 本アプリ用に差し替えた nginx 標準のデフォルトwebページを表示する。
+* `http://<サーバのIPアドレス>/` にて、BASIC認証の対象外となる静的HTMLファイルを表示。\
+  詳細は [nginx ディレクトリ](./nginx/README.md) を参照。
 * `http://<サーバのIPアドレス>/sysadmin/` にて、BASIC認証の対象となる静的HTMLファイルを表示
   * 作成した html ファイルを表示する。詳細は sysadmin ディレクトリを参照。
 * `http://<サーバのIPアドレス>/webadmin/` にて、BASIC認証の対象となるExpress UI/APIサービスを提供。\

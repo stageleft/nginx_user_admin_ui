@@ -42,27 +42,41 @@
   * PostgreSQLコンテナと通信し、ユーザ一覧を取得する。
   * 上記取得したユーザ一覧を用いて、パスワードファイルを作成する。
 
-## コンテナ機能のカスタマイズ
+## ファイル構成、および、コンテナ機能のカスタマイズ方針。
 
-* Dockerfile : nginx コンテナへ各種ファイルを適用する。
-* sample.conf : nginx への設定。 `/etc/nginx/conf.d/default.conf` への差し替えとして機能する。
-* default.conf.org : 上記 default.conf そのもの。参照用。 ※nginx公式から提供された設定ファイルなので、WTFPLライセンス対象外につき注意。
-* index.html : nginx への設定。 `/usr/share/nginx/html/index.html` への差し替えとして機能する。
-* index.html.org : 上記 index.html そのもの。参照用。 ※nginx公式から提供された設定ファイルなので、WTFPLライセンス対象外につき注意。
-* 00_setup_from_postgres.sh : 下記アプリを実行するためのシェルスクリプト。実行結果として出力されたBASIC認証ファイルの確認およびアプリ再実行の機能も合わせ持つ。
-  * 以前 `postgres_to_nginx/index.js` を実行した際に生成した認証ファイル `/etc/nginx/conf.d/*.sec` を削除する。
-  * `postgres_to_nginx/index.js` を実行し、 `dbserver` に用意されたBASIC認証向けのユーザデータをもとに、BASIC認証ファイルを生成する。\
-    * ファイルの形式は、 [nginx の Configuration](http://nginx.org/en/docs/http/configuring_https_servers.html) の
-    [Module ngx_http_auth_basic_module](http://nginx.org/en/docs/http/ngx_http_auth_basic_module.html) を参照。
-    * ファイル名のルールについてはシステム全体のReadme.mdを参照。
-    * BASIC認証パスワードについて、 `dbserver` には生パスワードが入っている前提にて、 `openssl passwd -6 【生パスワード】` を実行した結果をパスワードとしてファイルに出力する。
-* postgres_to_nginx ディレクトリ：上記アプリのファイル一式。
-
-カスタマイズ機能を追加するたび、以下のファイルを追加していくこと。
-
-* 追加： `xx_execute_function.sh` （追加機能のエントリーポイント）
-* 追加： `function` ディレクトリ （追加機能本体）
-* 編集： Dockerfile。 `00_setup_from_postgres.sh` および `postgres_to_nginx` を参考に、上記ファイルをコンテナに適用する。
+* 全体の設定構成
+  * Dockerfile : nginx コンテナへ各種ファイルを適用する。
+  * sample.conf : nginx への設定。 `/etc/nginx/conf.d/default.conf` への差し替えとして機能する。
+  * default.conf.org : 上記 default.conf そのもの。参照用。 ※nginx公式から提供された設定ファイルなので、WTFPLライセンス対象外につき注意。
+* ホーム画面
+  * index.html : nginx への設定。 `/usr/share/nginx/html/index.html` への差し替えとして機能する。
+  * index.html.org : 上記 index.html そのもの。参照用。 ※nginx公式から提供された設定ファイルなので、WTFPLライセンス対象外につき注意。
+* BASIC認証のユーザ設定をデータベースから読み取りファイル化する機能
+  * docker-entrypoint.d/00_basic_auth_user.sh : 下記の機能をもつのシェルスクリプト。
+    * 以前 `set_basic_auth_user/index.js` を実行した際に生成した認証ファイル `/etc/nginx/conf.d/*.sec` を削除する。
+    * 今回 `set_basic_auth_user/index.js` を実行する。詳細は下記。
+    * 実行結果として生成されたBASIC認証ファイルの状態を簡易確認し、明確に不正であれば自身を再実行する。
+  * set_basic_auth_user/index.js : データベースに用意されたBASIC認証向けのユーザデータをもとに、BASIC認証ファイルを生成する。
+    * データベースは、コンテナ `dbserver` 上に構築された postgres データベースであることを前提とする。
+    * 出力するファイルについては、以下のとおり。
+      * ファイルの形式は、 [nginx の Configuration](http://nginx.org/en/docs/http/configuring_https_servers.html) の
+      [Module ngx_http_auth_basic_module](http://nginx.org/en/docs/http/ngx_http_auth_basic_module.html) を参照。
+      * ファイル名のルールについてはシステム全体のReadme.mdを参照。
+      * BASIC認証パスワードについて、 `dbserver` には生パスワードが入っている前提にて、 `openssl passwd -6 【生パスワード】` を実行した結果をパスワードとしてファイルに出力する。
+  * set_basic_auth_user/package.json : 上記実行ファイルのライブラリを準備するために用いられる、パッケージング設定ファイル。
+* HTTPS証明書をデータベースから読み取りファイル化する機能
+  * docker-entrypoint.d/01_https_cert.sh : 下記の機能をもつのシェルスクリプト。
+    * 以前 `set_https_cert/index.js` を実行した際に取得した、秘密鍵ファイル `/etc/nginx/conf.d/*.key` および公開鍵証明書ファイル `/etc/nginx/conf.d/*.crt` を削除する。
+    * 今回 `set_https_cert/index.js` を実行する。詳細は下記。
+    * 実行結果として取得された秘密鍵および公開鍵証明書ファイルの状態を簡易確認し、明確に不正であれば自身を再実行する。
+  * set_https_cert/index.js : データベースに用意された秘密鍵および公開鍵証明書のファイルを取得する。
+    * 取得する公開鍵証明書ファイルは、ファイル名（FQDN名）ごとに、データベースに記載されたデプロイ指示時刻が最新のもののみ取得する。
+    * 取得する秘密鍵ファイルは、公開鍵証明書ファイルと紐づけ管理されているものを取得する。
+  * set_https_cert/package.json : 上記実行ファイルのライブラリを準備するために用いられる、パッケージング設定ファイル。
+* 今後、本コンテナにカスタマイズ機能を追加する際は、以下のとおりファイルを追加していく。\
+  同時に Dockerfile を編集し、追加されたファイルが適切に機能するよう調整する。
+  * （追加） `docker-entrypoint.d/xx_execute_function.sh` : 追加機能を実行するエントリーポイントとして。ファイル名は適宜設計する。
+  * （追加） `function` : 追加機能本体の全体をディレクトリ管理する。ビルドシステムが Dockerfile の RUN コマンドであることを留意して開発言語を選択すること。
 
 ## ホームページのカスタマイズ
 
