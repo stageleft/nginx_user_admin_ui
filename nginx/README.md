@@ -27,7 +27,6 @@ These files are under licensed under the 2-clause BSD-like license same as NGINX
 * リンク先は、各々のコンテナの説明を参照すること。
   * [webadmin](../webadmin/README.md)
   * [certadmin]
-  * [sysadmin]
 * `https://<サーバのIPアドレス>/` でもアクセス可能。 \
   certadmin 機能により設定する証明書（デフォルト状態では`localhost`向け自己署名証明書）により、同じ nginx 標準のデフォルトwebページを表示する。\
   ただし、基本的には信頼できる証明書機関が発行した証明書ではないことから、以下のとおり HTTPS 証明書不正の警告は発生する。\

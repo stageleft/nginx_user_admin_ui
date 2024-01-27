@@ -71,8 +71,6 @@ WTFPL License allows you any change of this app.
 
 * `http://<サーバのIPアドレス>/` にて、BASIC認証の対象外となる静的HTMLファイルを表示。\
   詳細は [nginx ディレクトリ](./nginx/README.md) を参照。
-* `http://<サーバのIPアドレス>/sysadmin/` にて、BASIC認証の対象となる静的HTMLファイルを表示
-  * 作成した html ファイルを表示する。詳細は sysadmin ディレクトリを参照。
 * `http://<サーバのIPアドレス>/webadmin/` にて、BASIC認証の対象となるExpress UI/APIサービスを提供。\
   詳細は [webadmin ディレクトリ](./webadmin/README.md) を参照。
 * `http://<サーバのIPアドレス>/certadmin/` にて、BASIC認証の対象となるExpress UI/APIサービスを提供。
@@ -134,7 +132,7 @@ NGINX の設定に従い、以下の設定を行う。必要に応じて、 `com
   * 共通要素として、 auth_basic_user_file 要素を追加する。\
     ファイルのディレクトリは `/etc/nginx/conf.d/` とし、拡張子は `.sec` とする。\
     ファイル名の本体部分は、サンプルの編集UIにおける「グループ」の文字を設定する。
-    例）グループ sysadmin_passwd に対するauth_basic_user_fileは `/etc/nginx/conf.d/sysadmin_passwd.sec` とする。
+    例）新規グループ sysadmin_passwd に対するauth_basic_user_fileは `/etc/nginx/conf.d/sysadmin_passwd.sec` とする。
     * 設定反映前に、 PostgreSQL にて、上記グループに対する、ユーザ名・パスワードの設定を追加する。\
       初期の起動前であれば、 `postgres/init/init-user-db.sh` の `INSERT INTO userfile (file, username, password)` 設定を追加する。 \
       一度でもアプリを利用したことがあれば、サンプルの編集UIにて、グループ名・ユーザ名・パスワード入力画面にて追加入力しておく。

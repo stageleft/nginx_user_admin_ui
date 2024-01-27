@@ -5,7 +5,6 @@ networks:
     name: 'localwebnw'
 volumes:
   postgresdb:
-  sysadminhtml:
 services:
   dbserver:
     build: ./postgres/.
@@ -29,10 +28,6 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    volumes:
-      - type: volume
-        source: sysadminhtml
-        target: /usr/share/nginx/html/sysadmin
     environment:
       - POSTGRES_SERVER=dbserver
       - POSTGRES_PORT=5432
@@ -77,14 +72,4 @@ services:
       - CSRINFO_OPT_ORG=MyExtraDivision
       - SELFROOTCA_DAYS=400
       - SELFCERT_DAYS=220
-    restart: always
-  sysadmin:
-    build: ./sysadmin/.
-    container_name: 'sysadmin'
-    networks:
-      - localwebnw
-    volumes:
-      - type: volume
-        source: sysadminhtml
-        target: /usr/share/nginx/html/sysadmin
     restart: always

@@ -7,7 +7,6 @@
 * ビルド、コンテナ名についてはディレクトリ構成を参照。
 * コンテナ外との通信について、考え方は全体設計を参照。
   * `dbserver` および 各種アプリ（ `webadmin` 等）に対しては、Docker内ネットワーク `localwebnw` を設定する。
-  * 静的Webページ（`sysadmin` 等）に対しては、Docker共有ボリューム `sysadminhtml` を設定する。ボリュームのマウント先については、 `sample.conf` に一致化させる。
   * 外部との通信については、HTTPを用いて行う。このため 80 ポートを公開する。
 * 環境変数については以下の通り。
   * `POSTGRES_` 系の環境変数については、通信先SQLサーバである `dbserver` コンテナの設定に従う。
@@ -23,10 +22,6 @@
       - localwebnw
     ports:
       - "80:80"
-    volumes:
-      - type: volume
-        source: sysadminhtml
-        target: /usr/share/nginx/html/sysadmin
     environment:
       - POSTGRES_SERVER=【dbserverの設定による】
       - POSTGRES_PORT=【dbserverの設定による】
@@ -240,6 +235,7 @@
 ## 調査資料： `dbserver` からの戻り値
 
 `node-postgres` で実行した `SELECT * FROM userfile;` の結果例は以下。
+内容は過去の設計のものであり、値は現在のデフォルト設定と異なる。
 
 ```json
 Result {

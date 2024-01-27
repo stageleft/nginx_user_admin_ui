@@ -34,7 +34,7 @@ see [document of this app](../README.md).
       グループ`webadmin_passwd`、ユーザー`webadmin`、パスワード`webpass`\
   * 表の読み方は以下のとおり。
     * グループ：ユーザ名とパスワードを適用するグループ名を指定する。グループ名は nginx コンテナの設定により決定する。詳細は [アプリ全体](../README.md) を参照。
-      * サンプルでは `sysadmin_passwd` と `webadmin_passwd` を準備している。
+      * サンプルでは `certadmin_passwd` と `webadmin_passwd` を準備している。
     * ユーザ名：BASIC認証のユーザ名を入力する。複数グループにまたがるユーザは各々設定すること。
     * パスワード：BASIC認証のパスワードを入力する。
     * 摘要：BASIC認証のコメント欄を入力してもよい。
