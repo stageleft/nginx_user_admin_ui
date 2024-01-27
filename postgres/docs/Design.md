@@ -40,6 +40,8 @@
 
 postgres サーバのIPアドレスは 172.17.0.1 として記載する。
 
+内容は過去の設計のものであり、テーブルの値は現在のデフォルト設定と異なる。
+
 ```bash
 $ psql -d settings_nginx -U postgres -h 172.17.0.1
 Password for user postgres: 

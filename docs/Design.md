@@ -7,22 +7,23 @@
 * コンテナ
   * `dbserver` : [PostgreSQL](https://www.postgresql.org/)
   * `webserver` : [nginx](https://www.nginx.com/)
-    * 起動時、Basic認証のユーザ・パスワードファイルをPostgreSQL経由で生成するためのアプリ（自作）を含む。
+    * 起動時、Basic認証のユーザ・パスワードファイルをデータベース経由で生成するための自作アプリを含む。
+    * 起動時、HTTPSで用いる秘密鍵および公開鍵証明書をデータベース経由で取得するための自作アプリを含む。
+    * 置き換え用のホームページ（HTMLファイル）を含む。
   * `webadmin` : DBアクセスUI/APIアプリ
     * BASIC認証の設定変更を反映するため `webserver` の再起動を行う機能を含む。
-  * `sysadmin` : html（ホームページ本体） ；ホームページ群（HTMLファイル）を抱えておき、data volume を経由して nginxに見せる用。
+  * （あとでやりたい） `sysadmin` : html（ホームページ本体）\
+    ホームページ群（HTMLファイル）を抱えておき、data volume を経由して nginxに見せる用。権限設定がうまくいかず、 webserver に抱えたほうが早いのでいったん削除。
   * （あとでやりたい）証明書管理UI/APIアプリ
 * Docker内（コンテナ間、datavol）通信
   * `dbserver` まわりの通信
     * ホスト上ファイルシステムとの通信（データベースのバックアップ）： volume
     * `webserver` との通信： network(SQL)
     * `webadmin` との通信： network(SQL)
-    * `sysadmin` との通信： 不要
   * `webserver` まわりの通信
     * ホスト上ファイルシステムとの通信：不要
     * `dbserver` との通信： network(SQL)
     * `webadmin` との通信： network(HTTP)
-    * `sysadmin` との通信： volume
   * （特記事項） `webadmin` まわりの通信にて上記以外
     * ホスト上Dockerとの通信：UNIXソケット `/var/run/docker.sock`
 * Docker外通信

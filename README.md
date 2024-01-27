@@ -69,30 +69,12 @@ WTFPL License allows you any change of this app.
 
 ## 現状サンプル設定での使い方 How to use without change (Only in Japanese language.)
 
-* `http://<サーバのIPアドレス>/` にて、BASIC認証の対象外となる静的HTMLファイルを表示
-  * 本アプリ用に差し替えた nginx 標準のデフォルトwebページを表示する。
-* `http://<サーバのIPアドレス>/sysadmin/` にて、BASIC認証の対象となる静的HTMLファイルを表示
-  * 作成した html ファイルを表示する。詳細は sysadmin ディレクトリを参照。
-* `http://<サーバのIPアドレス>/webadmin/` にて、BASIC認証の対象となるExpress UI/APIサービスを提供。
-  * ボタン等操作方法は以下の通り。
-    * ボタン「ユーザ一覧読み出し」で、現在PostgreSQLに入っているデータを表に反映する。
-    * ボタン「末尾に空行追加」で、表の一番下に、空っぽの行を追加する。
-    * ボタン「CSVダウンロード」で、現在の表の状態をCSVファイルとしてダウンロードする。
-    * ボタン「フィルタ初期化」で、下記の表のフィルタ文字列を全て削除する。
-    * ボタン「設定適用（Webサーバ再起動）」で、現在PostgreSQLに入っているデータをWebサーバに反映する。
-  * 表の読み方は以下のとおり。
-    * グループ：ユーザ名とパスワードを適用する、locationのグループを文字列で管理する。
-      * サンプルでは、 `sysadmin_passwd` と `webadmin_passwd` を準備している。
-    * ユーザ名：BASIC認証のユーザ名を入力する。
-    * パスワード：BASIC認証のパスワードを入力する。
-    * 摘要：BASIC認証のコメント欄を入力する。
-    * 削除ボタン：当該の行のデータを、画面およびPostgreSQLから削除する。
-  * 表のデータは編集可能であり、基本的には編集と同時にPostgreSQLに反映される。
-    * ただし、グループ名・ユーザ名・パスワードが揃っていない場合はPostgreSQLへの反映は失敗する。これらを揃えるように入力すること。
-    * 一度入力したグループ名・ユーザ名を変更した場合は、画面とPostgreSQLが不一致となる。「ユーザ一覧読み出し」ボタンをクリックして再一致化すること。
+* `http://<サーバのIPアドレス>/` にて、BASIC認証の対象外となる静的HTMLファイルを表示。\
+  詳細は [nginx ディレクトリ](./nginx/README.md) を参照。
+* `http://<サーバのIPアドレス>/webadmin/` にて、BASIC認証の対象となるExpress UI/APIサービスを提供。\
+  詳細は [webadmin ディレクトリ](./webadmin/README.md) を参照。
 * `http://<サーバのIPアドレス>/certadmin/` にて、BASIC認証の対象となるExpress UI/APIサービスを提供。
-  * HTTPSで用いる、デジタル鍵ペアおよび証明書を管理する画面。
-    * デジタル鍵ペア、証明書ともに、自動生成の方法と、ファイルアップロードによる方法の２種類による管理が可能。
+  詳細は [certadmin ディレクトリ](./certadmin/README.md) を参照。
 
 ## プラットフォームのカスタマイズ How to change password of Postgres (Only in Japanese language.)
 
@@ -113,11 +95,23 @@ NGINX設定ファイル （`nginx/sample.conf` ファイル）を適宜変更す
 
 ### HTTPS 対応 How to enable HTTPS (Only in Japanese language.)
 
-[HTTPS設定方法](http://nginx.org/en/docs/http/configuring_https_servers.html) に従い、HTTPSサーバとして構築することが可能。
+* サーバのFQDN（IPアドレス、サーバ名、または、ドメイン名）を決定する。
+* 決定したFQDNを用いて、 certadmin ページから各種の鍵を登録。（CA署名証明書、自己署名証明書、の２パターンに対応）
+* 決定したFQDNを用いて、 `nginx/sample.conf` ファイルを書き換える。書き換え箇所は下記３箇所。
 
-本アプリを用いて、インターネットからのアクセスを行う際は必須の設定となる。（HTTP通信だと、BASIC認証パスワードが生で流れるため）
+```bash
+    server_name         localhost;
+    ssl_certificate     /etc/nginx/conf.d/localhost.crt;
+    ssl_certificate_key /etc/nginx/conf.d/localhost.key;
+```
 
-ただし、サーバ名および証明書の管理手順を確立する必要が別途発生する。素直に考えると Dockerfile で証明書を取り込む方法が考えられるが、定期的なコンテナリビルドが必要となる。
+* HTTPのポートを閉じる場合、同じく `nginx/sample.conf` ファイルを書き換える。削除箇所は下記２箇所。 \
+  合わせて、 compose.yaml や Dockerfile からも 80 番ポートの公開は削除しておくとよい。
+
+```bash
+    listen              80;
+    listen              [::]:80;
+```
 
 ### ディレクトリの追加・構成変更 How to change HTML settings. (Only in Japanese language.)
 
@@ -135,7 +129,7 @@ NGINX の設定に従い、以下の設定を行う。必要に応じて、 `com
   * 共通要素として、 auth_basic_user_file 要素を追加する。\
     ファイルのディレクトリは `/etc/nginx/conf.d/` とし、拡張子は `.sec` とする。\
     ファイル名の本体部分は、サンプルの編集UIにおける「グループ」の文字を設定する。
-    例）グループ sysadmin_passwd に対するauth_basic_user_fileは `/etc/nginx/conf.d/sysadmin_passwd.sec` とする。
-    * 設定反映前に、 PostgreSQL にて、上記グループに対する、ユーザ名・パスワードの設定を追加する。\
+    例）新規グループ sysadmin_passwd に対するauth_basic_user_fileは `/etc/nginx/conf.d/sysadmin_passwd.sec` とする。
+    * 設定反映前に、上記グループに対する、ユーザ名・パスワードの設定をデータベースに追加する。\
       初期の起動前であれば、 `postgres/init/init-user-db.sh` の `INSERT INTO userfile (file, username, password)` 設定を追加する。 \
       一度でもアプリを利用したことがあれば、サンプルの編集UIにて、グループ名・ユーザ名・パスワード入力画面にて追加入力しておく。

@@ -8,9 +8,9 @@ CREATE TABLE userfile(
     password varchar(256),
     comment text
 );
-INSERT INTO userfile (file, username, password) VALUES ('webadmin_passwd', 'webadmin', 'webpass');
-INSERT INTO userfile (file, username, password, comment) VALUES ('webadmin_passwd', 'sysadmin', 'syspass', 'same as /sysadmin/ dir.');
-INSERT INTO userfile (file, username, password) VALUES ('sysadmin_passwd', 'sysadmin', 'syspass');
+INSERT INTO userfile (file, username, password, comment) VALUES ('webadmin_passwd', 'webadmin', 'webpass', 'system default.');
+INSERT INTO userfile (file, username, password, comment) VALUES ('webadmin_passwd', 'certadmin', 'certpass', 'same as /certadmin/ dir.');
+INSERT INTO userfile (file, username, password) VALUES ('certadmin_passwd', 'certadmin', 'certpass');
 -- Table and sample data for certificate (both CA-signed and self-signed).
 CREATE TABLE certfiles(
     file_id       serial PRIMARY KEY,
