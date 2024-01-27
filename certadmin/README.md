@@ -22,14 +22,14 @@ see [document of this app](../README.md).
   <img src="./docs/01_home.png" width="640" alt="ホーム画面">
 * 上記画面から、公開鍵証明書類を管理する画面と、証明書利用要求を管理する画面に各々遷移する。
 
-### 画面説明（公開鍵証明書類）
+### 画面説明（公開鍵証明書類管理）
 
 * ホーム画面から、 `certfiles` メニューをクリックして、以下の証明書類管理画面に遷移する。 \
   <img src="./docs/02_01_certfiles.png" width="640" alt="証明書類管理画面">
-* ボタン「ユーザ一覧読み出し」で、現在データベースに入っているデータを表に反映する。\
-  <img src="./docs/02_02_certfiles_default.png" width="640" alt="初期・ユーザ一覧読み出し直後の状態">\
+* ボタン「鍵および証明書一覧読み出し」で、現在データベースに入っているデータを表に反映する。\
+  <img src="./docs/02_02_certfiles_default.png" width="640" alt="初期・鍵および証明書一覧読み出し直後の状態">\
   上記画面の全体像は以下の通り。\
-  <img src="./docs/02_03_certfiles_default_70percent.png" width="640" alt="初期・ユーザ一覧読み出し直後の状態">
+  <img src="./docs/02_03_certfiles_default_70percent.png" width="640" alt="初期・鍵および証明書一覧読み出し直後の状態">
 * 操作メニューの内容は以下の通り。
   * 表の上のボタン操作方法は以下の通り。
     * 鍵および証明書一覧読み出し： データベース上で管理している、正のデータを表に反映する。
@@ -259,31 +259,128 @@ see [document of this app](../README.md).
       `CA = dummy_ca.example.com // expires 2024-01-30`\
       を入力した。画面は登録前であるが、その後「更新ボタン」を押して登録を完了している。
 
-### 画面説明（証明書利用要求）
+### 画面説明（公開鍵証明書利用要求）
 
-* ホーム画面から、 `deploy` メニューをクリックして遷移した証明書類管理画面は以下の通り。 \
+* ホーム画面から、 `deploy` メニューをクリックして、以下の公開鍵証明書利用要求画面に遷移する。 \
   <img src="./docs/03_01_deployment.png" width="640" alt="ログイン成功直後の状態">
+* ボタン「証明書一覧読み出し」で、現在データベースに入っているデータを表に反映する。\
+  <img src="./docs/03_02_deployment_default.png" width="640" alt="証明書一覧読み出し直後の状態">\
+  なお、本画面は初期値ではなく、上記「公開鍵証明書類管理」に説明の操作を一通り実施した後のものである。
 * 以下、適宜操作を行い、グループ・ユーザー名・パスワードをお使いの状態に向けて変更していく。
   * 表の上のボタン操作方法は以下の通り。
-    * ユーザ一覧読み出し： データベース上で管理している、正のデータを表に反映する。
-    * 末尾に空行追加：表の一番下に、空っぽの行を追加する。データを新規追加するために用いる。
-    * CSVダウンロード：現在、表示されているの表をCSVファイルとしてダウンロードする。データ破損時の手動復旧に不可欠であり、適宜実施すること。
+    * 証明書一覧読み出し： データベース上で管理している、正のデータを表に反映する。
+    * CSVダウンロード：現在、表示されているの表をCSVファイルとしてダウンロードする。
     * フィルタ初期化：下記の表のフィルタ文字列を全て削除する。
-    * 設定適用（Webサーバ再起動）：Webサーバを再起動し、現在のデータベース上にあるユーザー・パスワード設定をWebサーバに反映する。
-    * webadminユーザ強制復旧（webadmin アプリサーバ再起動）：本コンテナを再起動し、現在のデータベースに以下の情報を追記する。 \
-      グループ`webadmin_passwd`、ユーザー`webadmin`、パスワード`webpass`\
+    * 新証明書適用（Webサーバ再起動）：Webサーバを再起動し、現在のデータベース上にある証明書を、本要求の実施後の状態に更新する。
+  * 表の項目名の部分では、フィルタとして表示する行を絞り込むことができる。
+  * 表のデータは、下記「デプロイ指示ボタン」のみ可能である。
+    * 本表で表示される証明書類は「公開鍵証明書類管理」画面で表示されているものであるため、同画面を編集してから本画面を更新すること。
   * 表の読み方は以下のとおり。
-    * グループ：ユーザ名とパスワードを適用するグループ名を指定する。グループ名は nginx コンテナの設定により決定する。詳細は [アプリ全体](../README.md) を参照。
-      * サンプルでは `certadmin_passwd` と `webadmin_passwd` を準備している。
-    * ユーザ名：BASIC認証のユーザ名を入力する。複数グループにまたがるユーザは各々設定すること。
-    * パスワード：BASIC認証のパスワードを入力する。
-    * 摘要：BASIC認証のコメント欄を入力してもよい。
-    * 削除ボタン：当該の行のデータを、画面およびデータベースから削除する。
-  * 表のデータは編集可能であり、基本的には編集と同時にデータベースに反映される。
-    * ただし、グループ名・ユーザ名・パスワードが揃っていない場合はデータベースへの反映は失敗する。これらを揃えるように入力すること。
-    * グループ名・ユーザ名の変更操作を行った場合は、変更後のグループ名・ユーザ名を新規追加する。\
-      上記の仕様に伴い、変更操作前のグループ名・ユーザ名は画面に残らず、画面とデータベースが不一致となる。\
-      変更操作後は上記「ユーザ一覧読み出し」ボタンをクリックして再一致化すること。
+    * ファイルID：「公開鍵証明書類管理」画面と同一。
+    * ファイル名(FQDN)：「公開鍵証明書類管理」画面と同一。
+    * ファイル種別：「公開鍵証明書類管理」画面と同一。ただし、`selfcert` および `cacert` のみ表示される。
+    * 摘要：「公開鍵証明書類管理」画面と同一。
+    * デプロイ指示時刻：下記「デプロイ指示時刻」が押下された時刻。\
+      nginxコンテナは、各「ファイル名」ごとに最新のデプロイ指示時刻となる証明書を用いる。
+    * デプロイ指示ボタン：当該行で管理する証明書の利用指示。\
+      本コンテナの責務としては、上記デプロイ指示時刻の更新までを取り扱う。
+    * ルート証明書ダウンロードボタン(自己署名証明書のみ)：\
+      `selfcert` の場合、当該証明書に対応するルート証明書をダウンロードできる。\
+      `cacert` の場合は、無意味なtickアイコンが表示されているだけのもの。
+
+#### 画面操作シナリオ１・自己署名証明書の新規生成指示
+
+CA署名証明書についても同様であるが、CA署名証明書の場合は後半の「お手持ちのブラウザへ、ルート証明書を登録する」の手順が不要となる。
+
+事前状態として、 nginx コンテナは以下の通り、ファイルID:4の証明書のみを登録している。
+
+```bash
+$ docker exec -it webserver bash
+root:/# cd /etc/nginx/conf.d
+root:/etc/nginx/conf.d# ls -l
+total 20
+-rw-r--r-- 1 root root 117 Jan 27 03:50 certadmin_passwd.sec
+-rw-r--r-- 1 root root 806 Jan 27 03:50 localhost.crt
+-rw-r--r-- 1 root root 302 Jan 27 03:50 localhost.key
+-rw-r--r-- 1 root root 906 Jan 27 03:33 sample.conf
+-rw-r--r-- 1 root root 233 Jan 27 03:50 webadmin_passwd.sec
+root:/etc/nginx/conf.d# sha1sum localhost.key
+cfb058d23fad2ea18859d1d3abeb4db992a25015  localhost.key
+root:/etc/nginx/conf.d# sha1sum localhost.crt
+a0172c3b96557fe4c88e14187947f0411666cc1e  localhost.crt
+```
+
+1. デプロイ指示を行う
+   1. 表内の「デプロイ指示ボタン」を押下する。今回はファイルID:9に対して実施した。\
+      <img src="./docs/03_03_deployment_command.png" width="640" alt="デプロイ指示時刻が更新された状態">
+   1. 表上部の「新証明書適用（Webサーバ再起動）」ボタンを押下する。押下後、画面の更新はない。
+   1. （確認）しばらく待つとWebサーバが再起動し、新しい証明書を読み込む。読み込まれた状態は以下の通り。
+
+      ```bash
+      $ docker exec -it webserver bash
+      root:/# cd /etc/nginx/conf.d
+      root:/etc/nginx/conf.d# ls -l
+      total 28
+      -rw-r--r-- 1 root root 117 Jan 27 07:37 certadmin_passwd.sec
+      -rw-r--r-- 1 root root 806 Jan 27 07:37 localhost.crt
+      -rw-r--r-- 1 root root 302 Jan 27 07:37 localhost.key
+      -rw-r--r-- 1 root root 786 Jan 27 07:37 oredayo.crt
+      -rw-r--r-- 1 root root 302 Jan 27 07:37 oredayo.key
+      -rw-r--r-- 1 root root 906 Jan 27 03:33 sample.conf
+      -rw-r--r-- 1 root root 233 Jan 27 07:37 webadmin_passwd.sec
+      root@fb54c4e586fc:/etc/nginx/conf.d# sha1sum oredayo.key 
+      52a05558cf1e590086439bb778fb426f7f5b9aea  oredayo.key
+      root@fb54c4e586fc:/etc/nginx/conf.d# sha1sum oredayo.crt
+      9716fe4513c062014bef6c4742b7a2006a773780  oredayo.crt
+      ```
+
+      上記、 oredayo.key および oredayo.crt が追加されており、新規の証明書払い出しに成功したことがわかる。
+
+1. お手持ちのブラウザへ、ルート証明書を登録する
+   1. 表内の「ルート証明書ダウンロードボタン(自己署名証明書のみ)」を押下する。今回はファイルID:4に対して実施した。\
+      <img src="./docs/03_04_download_rootca.png" width="640" alt="ダウンロードされたルート証明書">
+   1. お手持ちのブラウザへ証明書を適用する。\
+      Firefox の手順は以下の通り、 https://jp.globalsign.com/support/ssl/config/cert-import-firefox.html に従い実施。\
+      <img src="./docs/03_05_apply_selfca_to_browser_1.png" width="640" alt="設定→プライバシーとセキュリティ・証明書を表示ボタン">\
+      <img src="./docs/03_05_apply_selfca_to_browser_2.png" width="640" alt="証明書マネージャー（認証局証明書画面）・初期">\
+      <img src="./docs/03_05_apply_selfca_to_browser_3.png" width="640" alt="インポートボタン押下、ダウンロードした証明書を選択">\
+      <img src="./docs/03_05_apply_selfca_to_browser_4.png" width="640" alt="証明書のインポート確認画面・初期">\
+      <img src="./docs/03_05_apply_selfca_to_browser_5.png" width="640" alt="証明書のインポート確認画面・内容選択">\
+      <img src="./docs/03_05_apply_selfca_to_browser_6.png" width="640" alt="証明書マネージャー（認証局証明書画面）・インポート後">
+
+#### 画面操作シナリオ２・証明書の更新指示
+
+事前状態は以下の通り。
+
+* nginx コンテナは前記の通り、ファイルID:4 とファイルID:9 の証明書を登録している。
+* 証明書として、FQDN `localhost` に、新規の自己署名証明書（ファイルID:12）を登録した。\
+  <img src="./docs/03_10_deployment_default.png" width="640" alt="証明書一覧読み出し直後の状態">
+
+1. デプロイ指示を行う
+   1. 表内の「デプロイ指示ボタン」を押下する。今回はファイルID:12に対して実施した。\
+      <img src="./docs/03_11_deployment_command.png" width="640" alt="デプロイ指示時刻が更新された状態">
+   1. 表上部の「新証明書適用（Webサーバ再起動）」ボタンを押下する。押下後、画面の更新はない。
+   1. （確認）しばらく待つとWebサーバが再起動し、新しい証明書を読み込む。読み込まれた状態は以下の通り。
+
+      ```bash
+      $ docker exec -it webserver bash
+      root:/# cd /etc/nginx/conf.d
+      root:/etc/nginx/conf.d# ls -l
+      total 28
+      -rw-r--r-- 1 root root 117 Jan 27 08:13 certadmin_passwd.sec
+      -rw-r--r-- 1 root root 810 Jan 27 08:13 localhost.crt
+      -rw-r--r-- 1 root root 302 Jan 27 08:13 localhost.key
+      -rw-r--r-- 1 root root 786 Jan 27 08:13 oredayo.crt
+      -rw-r--r-- 1 root root 302 Jan 27 08:13 oredayo.key
+      -rw-r--r-- 1 root root 906 Jan 27 03:33 sample.conf
+      -rw-r--r-- 1 root root 233 Jan 27 08:13 webadmin_passwd.sec
+      root:/etc/nginx/conf.d# sha1sum localhost.key 
+      bdbb9c98ed3492e9820a28f52f2474c0dbe12ca8  localhost.key
+      root:/etc/nginx/conf.d# sha1sum localhost.crt 
+      98bae0475f35bc9bf596a273cc2d393a2ce5d72e  localhost.crt
+      ```
+
+      上記、 localhost.key および localhost.crt が事前状態と異なることから、更新されており、証明書の更新払い出しに成功したことがわかる。
 
 ## 注意事項 Caution to use (Only in Japanese language.)
 
